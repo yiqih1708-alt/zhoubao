@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>重要截止日期</title>
+<style>
+:root{
+ --bg:#F2F2F7;--bg2:#FFFFFF;--card:#FFFFFF;--cell:#FFFFFF;--cell2:#FAFAFC;
+ --label:#000000;--label2:rgba(60,60,67,.72);--label3:rgba(60,60,67,.45);
+ --sep:rgba(60,60,67,.14);--blue:#007AFF;--shadow:0 1px 3px rgba(0,0,0,.05),0 8px 24px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+ :root{--bg:#000000;--bg2:#1C1C1E;--card:#1C1C1E;--cell:#2C2C2E;--cell2:#242426;
+  --label:#FFFFFF;--label2:rgba(235,235,245,.72);--label3:rgba(235,235,245,.42);
+  --sep:rgba(235,235,245,.16);--shadow:0 1px 3px rgba(0,0,0,.6),0 10px 30px rgba(0,0,0,.45);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+html{scroll-snap-type:y proximity;scroll-padding-top:var(--snap-top,150px)}
+body{background:var(--bg);color:var(--label);
+ font:15px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI","Microsoft YaHei",sans-serif;
+ -webkit-font-smoothing:antialiased;padding:0 18px 88px}
+.wrap{max-width:1400px;margin:0 auto}
+.masthead{text-align:center;padding:2px 0 8px;border-bottom:2px solid var(--label);
+ position:relative}
+.masthead::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--sep)}
+h1{margin:6px 0 3px;font-size:54px;line-height:1.04;font-weight:700;
+ font-family:"Songti SC","Source Han Serif SC","Noto Serif SC",SimSun,"宋体",serif}
+.masthead .sub{font-size:19px;color:var(--label2);margin-top:1px;
+ font-family:"Baskerville Old Face","Baskerville",Garamond,serif}
+.masthead .legend{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:6px}
+.lg{display:inline-flex;align-items:center;gap:5px;color:var(--label2);font-size:10.5px}
+.lg i{width:7px;height:7px;border-radius:50%;display:block}
+header{position:sticky;top:0;z-index:20;margin:0 -18px 10px;padding:8px 18px 9px;
+ background:color-mix(in srgb,var(--bg) 86%,transparent);
+ backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+ border-bottom:.5px solid var(--sep)}
+#brand{display:inline-block;cursor:pointer;
+ -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#brand:active{opacity:.75}
+#brand.float{animation:floatUp .85s cubic-bezier(.3,.9,.3,1)}
+@keyframes floatUp{0%{transform:translateY(0)}32%{transform:translateY(-10px)}
+ 64%{transform:translateY(3px)}100%{transform:translateY(0)}}
+button{font:inherit;font-size:13px;font-weight:500;padding:7px 15px;border-radius:999px;border:none;
+ background:var(--bg2);color:var(--blue);cursor:pointer;box-shadow:var(--shadow);transition:transform .16s,opacity .16s}
+button:active{transform:scale(.97)}
+button:disabled{color:var(--label3);box-shadow:none;background:transparent;cursor:default}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media(min-width:1180px){.cols{grid-template-columns:minmax(0,1fr) 320px}}
+.week{background:var(--card);border-radius:18px;padding:10px 12px;margin-bottom:10px;
+ box-shadow:var(--shadow);scroll-snap-align:start}
+.whead{font-size:12px;font-weight:600;color:var(--label3);margin:0 0 8px 2px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+@media(max-width:720px){.week{overflow-x:auto}.days{grid-template-columns:repeat(7,minmax(120px,1fr))}}
+.day{background:var(--cell);border-radius:14px;padding:6px 6px 8px;min-height:48px;min-width:0}
+.day.weekend{background:var(--cell2)}
+.day.today{background:color-mix(in srgb,var(--blue) 10%,var(--cell))}
+.dnum{font-size:12px;font-weight:600;color:var(--label);margin-bottom:5px}
+.day.today .dnum{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;
+ border-radius:999px;background:var(--blue);color:#fff;padding:0 4px;font-weight:600}
+.items{display:flex;flex-direction:column;gap:5px}
+.chip{display:flex;gap:6px;align-items:flex-start;border-radius:12px;padding:6px 7px;
+ background:color-mix(in srgb,var(--acc) 14%,transparent);
+ box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--acc) 26%,transparent);
+ transition:opacity .28s ease,transform .28s cubic-bezier(.32,.72,0,1)}
+.chip input,.acard input{appearance:none;-webkit-appearance:none;flex:0 0 auto;width:17px;height:17px;margin:1px 0 0;
+ border:1.6px solid color-mix(in srgb,var(--acc) 45%,#8E8E93);border-radius:6px;background:transparent;
+ cursor:pointer;position:relative;transition:background .18s,border-color .18s}
+.chip input:checked,.acard input:checked{background:var(--acc);border-color:var(--acc)}
+.chip input:checked::after,.acard input:checked::after{content:"";position:absolute;left:4.7px;top:1.4px;width:4.2px;height:8.6px;
+ border:2.1px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+.cbody{display:block;flex:1 1 auto;min-width:0;text-decoration:none;color:inherit;overflow-wrap:anywhere}
+.ct{display:block;font-size:11.5px;font-weight:600;color:var(--dark);overflow-wrap:anywhere}
+.cm{display:block;font-size:10.5px;color:var(--label2);overflow-wrap:anywhere}
+.chip.done{opacity:.42}
+.chip.done .ct,.chip.done .cm{text-decoration:line-through;
+ text-decoration-color:color-mix(in srgb,var(--label) 55%,transparent)}
+.empty{font-size:12px;color:var(--label3);padding:2px 4px}
+aside{position:sticky;top:var(--snap-top,160px);align-self:start}
+body.nopin aside{position:static}
+.ashead{display:flex;align-items:center;gap:8px;margin:2px 0 8px}
+aside .ttl{font-size:15px;font-weight:600;margin:0}
+.pinitem{flex:0 0 auto;align-self:flex-start;font-size:10.5px;font-weight:500;padding:3px 8px;
+ border-radius:999px;background:transparent;color:var(--label3);box-shadow:none;white-space:nowrap}
+.pinitem:hover{color:var(--blue);background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.acard.pinned .pinitem{background:var(--blue);color:#fff}
+body.showdone .pinitem{color:var(--blue)}
+.newbtn{display:none;flex:0 0 auto;align-self:flex-start;font-size:10.5px;font-weight:600;
+ padding:3px 8px;border-radius:999px;background:transparent;color:var(--blue);box-shadow:none;
+ white-space:nowrap;position:relative;overflow:hidden}
+.newbtn i{position:relative;z-index:1;font-style:normal}
+.newbtn::after{content:"";position:absolute;left:0;top:0;bottom:0;width:0;
+ background:var(--blue);opacity:.22}
+.acard.isnew .newbtn{display:inline-flex}
+.acard.isnew .newbtn::after{animation:fill30 30s linear forwards}
+.acard.isnew{background:color-mix(in srgb,var(--blue) 7%,transparent);border-radius:10px}
+@keyframes fill30{from{width:0}to{width:100%}}
+.lists{position:relative;display:flex;flex-direction:column;background:var(--card);
+ border-radius:14px;box-shadow:var(--shadow);overflow:hidden;height:min(62vh,560px)}
+.decor{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none;z-index:0}
+body.showdone .decor{display:block}
+.annlist{position:relative;z-index:1;flex:1 1 auto;min-height:0;display:block;background:transparent;
+ border-radius:0;box-shadow:none;padding:2px 12px 0;max-height:none;overflow-y:auto;gap:0}
+.acard.archived{display:none}
+body.showdone .acard{display:none}
+body.showdone .acard.archived{display:flex}
+.lists.pushin{animation:pushUp .4s cubic-bezier(.22,.9,.28,1)}
+@keyframes pushUp{from{transform:translateY(26px);opacity:0}to{transform:translateY(0);opacity:1}}
+.lists.pushdown{animation:pushDown .4s cubic-bezier(.22,.9,.28,1)}
+@keyframes pushDown{from{transform:translateY(-26px);opacity:0}to{transform:translateY(0);opacity:1}}
+.donebtn{display:block;flex:0 0 auto;width:auto;margin:8px 12px 12px;font-size:12.5px;font-weight:500;
+ padding:9px 12px;border-radius:12px;background:var(--bg);color:var(--blue);box-shadow:none;
+ border:.5px solid var(--sep);z-index:3}
+.donebtn.on{background:var(--blue);color:#fff;border-color:transparent}
+.annlist::-webkit-scrollbar{width:8px}
+.annlist::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--label) 22%,transparent);
+ border-radius:8px}
+.annlist::-webkit-scrollbar-track{background:transparent}
+.acard{display:flex;gap:8px;align-items:flex-start;padding:9px 0;margin:0;
+ border-bottom:.5px solid var(--sep);background:none;box-shadow:none;
+ transition:opacity .28s ease,transform .28s cubic-bezier(.32,.72,0,1)}
+.annlist .acard:last-child{border-bottom:none}
+.acard>a{text-decoration:none;color:inherit;display:block;flex:1 1 auto;min-width:0}
+.acard b{display:block;font-size:12px;font-weight:600;color:var(--dark);margin-bottom:2px}
+.acard span{display:block;font-size:11.5px;color:var(--label2)}
+.acard.done{opacity:.42}
+.acard.done b,.acard.done span{text-decoration:line-through;
+ text-decoration-color:color-mix(in srgb,var(--label) 55%,transparent)}
+.acard.restored{box-shadow:inset 2.5px 0 0 color-mix(in srgb,var(--blue) 50%,transparent)}
+.pager{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:30;
+ display:flex;align-items:center;gap:14px;padding:6px 10px;border-radius:999px;
+ background:color-mix(in srgb,var(--bg) 78%,transparent);
+ backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
+ box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.tri{width:44px;height:34px;padding:0;border-radius:10px;background:var(--card);color:var(--blue);
+ font-size:13px;line-height:1;box-shadow:var(--shadow)}
+.tri:disabled{color:var(--label3);box-shadow:none;background:transparent}
+.weeklabel{font-size:13px;font-weight:600;color:var(--label2);min-width:190px;text-align:center;
+ font-variant-numeric:tabular-nums}
+.tri.home{width:auto;min-width:54px;padding:0 11px;font-size:12px}
+.chip.past{opacity:.85}
+.chip.past .ct{color:var(--label2)}
+.chip.past .cm{color:var(--label3)}
+.chip .tick{flex:0 0 auto;width:17px;text-align:center;font-size:12.5px;line-height:17px;
+ font-weight:700;color:var(--acc)}
+.chip.auto.done .tick::before{content:"\2713"}
+.chip.auto.done .ct,.chip.auto.done .cm{text-decoration:line-through;
+ text-decoration-color:color-mix(in srgb,var(--label) 45%,transparent)}
+.chip.auto.done{opacity:.45}
+.tip{font-size:12px;color:var(--label3);margin-top:12px}
+/* 顶部浮出的「有新内容」提示：停留 5 秒，蓝色从左往右填充 */
+.toast{position:fixed;left:50%;top:10px;z-index:60;
+ width:min(640px,calc(100% - 32px));padding:11px 13px 12px;border-radius:16px;
+ background:color-mix(in srgb,var(--card) 93%,transparent);
+ backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+ box-shadow:0 12px 36px rgba(0,0,0,.16),inset 0 0 0 .5px var(--sep);
+ overflow:hidden;cursor:pointer;opacity:0;pointer-events:none;
+ transform:translate(-50%,-16px);
+ transition:opacity .3s ease,transform .4s cubic-bezier(.22,.9,.28,1)}
+.toast.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.toast .tfill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--blue);opacity:.12}
+.toast.show .tfill{animation:tfill 5s linear forwards}
+@keyframes tfill{from{width:0}to{width:100%}}
+.toast .thead{position:relative;display:flex;align-items:baseline;gap:8px;margin:0 0 5px}
+.toast .thead b{font-size:12.5px}
+.toast .thead span{margin-left:auto;font-size:10.5px;color:var(--label3)}
+.toast .trows{position:relative;display:flex;flex-direction:column;gap:3px}
+.toast .trow{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:var(--label2)}
+.toast .tag{flex:0 0 auto;font-size:10px;font-weight:600;padding:1px 6px;border-radius:6px;
+ background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
+.toast .tag.ann{background:color-mix(in srgb,#5856D6 15%,transparent);color:#5856D6}
+.toast .tag.test{background:color-mix(in srgb,#34C759 16%,transparent);color:#1B7A34}
+.toast .trow em{font-style:normal;color:var(--label)}
+button.primary:active{transform:scale(.96)}
+button.primary.ok{background:#34C759;color:#fff;animation:pop .34s ease}
+button.primary .ck{font-weight:700;font-size:14px;line-height:1}
+@keyframes pop{0%{transform:scale(.94)}55%{transform:scale(1.04)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <div class="tfill" aria-hidden="true"></div>
+  <div class="thead"><b id="thead">有新内容</b><span>点一下收起</span></div>
+  <div class="trows" id="trows"></div>
+</div>
+<div class="wrap">
+<header>
+  <div class="masthead">
+    <h1 id="brand" title="点一下更新">周报</h1>
+    <div class="sub">University of Birmingham</div>
+    <div class="legend"><span class="lg"><i style="background:#007AFF"></i>课程</span><span class="lg"><i style="background:#FF3B30"></i>作业 / 考试</span><span class="lg"><i style="background:#FF9500"></i>每周作业</span><span class="lg"><i style="background:#5856D6"></i>行政</span><span class="lg"><i style="background:#30B0C7"></i>活动</span><span class="lg"><i style="background:#AF52DE"></i>个人</span><span class="lg"><i style="background:#34C759"></i>已完成</span></div>
+  </div>
+</header>
+<div class="cols">
+  <main>
+    <div class="weeks" id="weeks"><section class="week" data-week="0" data-label="Week 3 · 12–18 October"><div class="whead">Week 3 · 12–18 October 2026</div><div class="days"><div class="day"><div class="dnum">12</div><div class="items"><div class="chip past class-item auto" data-order="0" style="--acc:#C7C7CC;--dark:#8E8E93" data-id="cls|2026-10-12|Industrial Automation and Robotics|2026-10-12T17:00" data-ends="2026-10-12T17:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Industrial Automation and Robotics</span><span class="cm">上课 15:00 - 17:00</span><span class="cm">计算机实验 · ENG-G27</span></span></div><div class="chip past checkable" data-order="1" style="--acc:#C7C7CC;--dark:#8E8E93" data-checkable data-id="2026-10-12|1|Industrial Automation and Robotics"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87771/assignments" target="_blank" rel="noreferrer"><span class="ct">Industrial Automation and Robotics</span><span class="cm">已交：第 3 周小组周报</span></a></div></div></div><div class="day"><div class="dnum">13</div><div class="items"><div class="chip past class-item auto" data-order="0" style="--acc:#C7C7CC;--dark:#8E8E93" data-id="cls|2026-10-13|Research and Professional Skills|2026-10-13T12:00" data-ends="2026-10-13T12:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Research and Professional Skills</span><span class="cm">上课 10:00 - 12:00</span><span class="cm">讲座 · Gisbert Kapp GKAP-LT1</span></span></div></div></div><div class="day today"><div class="dnum">14</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#AF52DE;--dark:#6B2E8A" data-checkable data-id="2026-10-14|0|个人事务"><input type="checkbox" aria-label="个人事务"><a class="cbody" href="https://portal.premierstudenthalls.com/tenant" target="_blank" rel="noreferrer"><span class="ct">个人事务</span><span class="cm">在家等修理工修门</span><span class="cm">时间待定</span></a></div></div></div><div class="day"><div class="dnum">15</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#30B0C7;--dark:#1A6B7C" data-checkable data-id="2026-10-15|0|Industrial Automation and Robotics"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87771/discussion_topics/1310246" target="_blank" rel="noreferrer"><span class="ct">Industrial Automation and Robotics</span><span class="cm">听在线学术报告 10:00</span><span class="cm">Zoom 密码 996279</span></a></div><div class="chip class-item auto" data-order="1" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-15|Intelligent Robotics (Extended)|2026-10-15T13:00" data-ends="2026-10-15T13:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Intelligent Robotics (Extended)</span><span class="cm">上课 11:00 - 13:00</span><span class="cm">讲座 · WATN-LT A (G23)</span></span></div><div class="chip class-item auto" data-order="2" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-15|Industrial Automation and Robotics|2026-10-15T16:00" data-ends="2026-10-15T16:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Industrial Automation and Robotics</span><span class="cm">上课 14:00 - 16:00</span><span class="cm">计算机实验 · ENG-G27</span></span></div></div></div><div class="day"><div class="dnum">16</div><div class="items"><div class="chip class-item auto" data-order="0" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-16|Intelligent Robotics (Extended)|2026-10-16T15:00" data-ends="2026-10-16T15:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Intelligent Robotics (Extended)</span><span class="cm">上课 13:00 - 15:00</span><span class="cm">实验课 · CPSC-UG04</span></span></div><div class="chip class-item auto" data-order="1" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-16|Research and Professional Skills|2026-10-16T17:00" data-ends="2026-10-16T17:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Research and Professional Skills</span><span class="cm">上课 15:00 - 17:00</span><span class="cm">讲座 · GUILD-149</span></span></div></div></div><div class="day weekend"><div class="dnum">17</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">18</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="1" data-label="Week 4 · 19–25 October"><div class="whead">Week 4 · 19–25 October 2026</div><div class="days"><div class="day"><div class="dnum">19</div><div class="items"><div class="chip class-item auto" data-order="0" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-19|Research and Professional Skills|2026-10-19T13:00" data-ends="2026-10-19T13:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Research and Professional Skills</span><span class="cm">上课 11:00 - 13:00</span><span class="cm">计算机实验 · ENG-G27</span></span></div><div class="chip class-item auto" data-order="1" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-19|Industrial Automation and Robotics|2026-10-19T17:00" data-ends="2026-10-19T17:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Industrial Automation and Robotics</span><span class="cm">上课 15:00 - 17:00</span><span class="cm">计算机实验 · ENG-G27</span></span></div><div class="chip checkable" data-order="2" style="--acc:#FF9500;--dark:#8A5000" data-checkable data-id="2026-10-19|2|Industrial Automation and Robotics"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87771/assignments" target="_blank" rel="noreferrer"><span class="ct">Industrial Automation and Robotics</span><span class="cm">交：第 4 周小组周报</span><span class="cm">23:59 截止</span></a></div><div class="chip checkable" data-order="3" style="--acc:#AF52DE;--dark:#6B2E8A" data-checkable data-id="2026-10-19|3|个人事务"><input type="checkbox" aria-label="个人事务"><a class="cbody" href="https://sellypharmacy.co.uk/campus.html" target="_blank" rel="noreferrer"><span class="ct">个人事务</span><span class="cm">去打脑膜炎疫苗 · 第 2 剂</span><span class="cm">Selly Pharmacy 校内店</span><span class="cm">University Centre B15 2TT</span></a></div></div></div><div class="day"><div class="dnum">20</div><div class="items"><div class="chip class-item auto" data-order="0" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-20|Research and Professional Skills|2026-10-20T12:00" data-ends="2026-10-20T12:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Research and Professional Skills</span><span class="cm">上课 11:00 - 12:00</span><span class="cm">计算机实验 · 分组 · ENG-126 Cluster</span></span></div></div></div><div class="day"><div class="dnum">21</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#30B0C7;--dark:#1A6B7C" data-checkable data-id="2026-10-21|0|School of Engineering - Student Guide"><input type="checkbox" aria-label="School of Engineering - Student Guide"><a class="cbody" href="https://canvas.bham.ac.uk/courses/90040/discussion_topics/1303344" target="_blank" rel="noreferrer"><span class="ct">School of Engineering - Student Guide</span><span class="cm">参加秋季招聘会 11:00</span><span class="cm">地点 Y8 Atrium</span></a></div><div class="chip class-item auto" data-order="1" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-21|Industrial Automation and Robotics|2026-10-21T16:00" data-ends="2026-10-21T16:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Industrial Automation and Robotics</span><span class="cm">上课 14:00 - 16:00</span><span class="cm">计算机实验 · ENG-G27</span></span></div></div></div><div class="day"><div class="dnum">22</div><div class="items"><div class="chip class-item auto" data-order="0" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-22|Intelligent Robotics (Extended)|2026-10-22T13:00" data-ends="2026-10-22T13:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Intelligent Robotics (Extended)</span><span class="cm">上课 11:00 - 13:00</span><span class="cm">讲座 · WATN-LT A (G23)</span></span></div></div></div><div class="day"><div class="dnum">23</div><div class="items"><div class="chip class-item auto" data-order="0" style="--acc:#007AFF;--dark:#0051B3" data-id="cls|2026-10-23|Intelligent Robotics (Extended)|2026-10-23T15:00" data-ends="2026-10-23T15:00"><span class="tick" aria-hidden="true"></span><span class="cbody"><span class="ct">Intelligent Robotics (Extended)</span><span class="cm">上课 13:00 - 15:00</span><span class="cm">实验课 · CPSC-UG04</span></span></div><div class="chip checkable" data-order="1" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-10-23|1|Intelligent Robotics"><input type="checkbox" aria-label="Intelligent Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/90242/discussion_topics/1308658" target="_blank" rel="noreferrer"><span class="ct">Intelligent Robotics</span><span class="cm">交 Assignment 1（占 10%）</span><span class="cm">交 Project proposal</span><span class="cm">17:00 截止</span></a></div></div></div><div class="day weekend"><div class="dnum">24</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">25</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="2" data-label="Week 5 · 26 October – 1 November"><div class="whead">Week 5 · 26 October – 1 November 2026</div><div class="days"><div class="day"><div class="dnum">26</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF9500;--dark:#8A5000" data-checkable data-id="2026-10-26|0|Industrial Automation and Robotics"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87771/assignments" target="_blank" rel="noreferrer"><span class="ct">Industrial Automation and Robotics</span><span class="cm">交：第 5 周小组周报</span><span class="cm">23:59 截止</span></a></div></div></div><div class="day"><div class="dnum">27</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#30B0C7;--dark:#1A6B7C" data-checkable data-id="2026-10-27|0|Research and Professional Skills"><input type="checkbox" aria-label="Research and Professional Skills"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87806/discussion_topics/1309542" target="_blank" rel="noreferrer"><span class="ct">Research and Professional Skills</span><span class="cm">参加计算机实验</span><span class="cm">先查自己在哪一组</span></a></div></div></div><div class="day"><div class="dnum">28</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">29</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">30</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#30B0C7;--dark:#1A6B7C" data-checkable data-id="2026-10-30|0|School of Engineering - Student Guide"><input type="checkbox" aria-label="School of Engineering - Student Guide"><a class="cbody" href="https://canvas.bham.ac.uk/courses/90040/announcements" target="_blank" rel="noreferrer"><span class="ct">School of Engineering - Student Guide</span><span class="cm">参加 AFBELive 2026 会议</span><span class="cm">Vox Conference Centre</span></a></div></div></div><div class="day weekend"><div class="dnum">31</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">1</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="3" data-label="Week 6 · 2–8 November"><div class="whead">Week 6 · 2–8 November 2026</div><div class="days"><div class="day"><div class="dnum">2</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF9500;--dark:#8A5000" data-checkable data-id="2026-11-02|0|Industrial Automation and Robotics"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87771/assignments" target="_blank" rel="noreferrer"><span class="ct">Industrial Automation and Robotics</span><span class="cm">交：第 6 周小组周报</span><span class="cm">23:59 截止</span></a></div></div></div><div class="day"><div class="dnum">3</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">4</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#30B0C7;--dark:#1A6B7C" data-checkable data-id="2026-11-04|0|Libraries and Learning Resources for EPS 26/27"><input type="checkbox" aria-label="Libraries and Learning Resources for EPS 26/27"><a class="cbody" href="https://canvas.bham.ac.uk/courses/89887/discussion_topics/1311054" target="_blank" rel="noreferrer"><span class="ct">Libraries and Learning Resources for EPS 26/27</span><span class="cm">参加 PGT Skills Chat 13:00</span></a></div></div></div><div class="day"><div class="dnum">5</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">6</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">7</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">8</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="4" data-label="Week 7 · 9–15 November"><div class="whead">Week 7 · 9–15 November 2026</div><div class="days"><div class="day"><div class="dnum">9</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">10</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">11</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">12</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">13</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">14</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">15</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="5" data-label="Week 8 · 16–22 November"><div class="whead">Week 8 · 16–22 November 2026</div><div class="days"><div class="day"><div class="dnum">16</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">17</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">18</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">19</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">20</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">21</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">22</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="6" data-label="Week 9 · 23–29 November"><div class="whead">Week 9 · 23–29 November 2026</div><div class="days"><div class="day"><div class="dnum">23</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">24</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-11-24|0|Research and Professional Skills"><input type="checkbox" aria-label="Research and Professional Skills"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87806/assignments" target="_blank" rel="noreferrer"><span class="ct">Research and Professional Skills</span><span class="cm">上传小组展示视频（5 分钟）</span><span class="cm">17:00 截止</span></a></div></div></div><div class="day"><div class="dnum">25</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">26</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">27</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">28</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">29</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="7" data-label="Week 10 · 30 November – 6 December"><div class="whead">Week 10 · 30 November – 6 December 2026</div><div class="days"><div class="day"><div class="dnum">30</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">1</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">2</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">3</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-12-03|0|Research and Professional Skills"><input type="checkbox" aria-label="Research and Professional Skills"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87806/assignments" target="_blank" rel="noreferrer"><span class="ct">Research and Professional Skills</span><span class="cm">现场展示问答 14:00 - 17:00</span><span class="cm">准备 1 页总结幻灯片</span></a></div></div></div><div class="day"><div class="dnum">4</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-12-04|0|Intelligent Robotics"><input type="checkbox" aria-label="Intelligent Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/90242/assignments" target="_blank" rel="noreferrer"><span class="ct">Intelligent Robotics</span><span class="cm">交 Final project（占 90%）</span></a></div></div></div><div class="day weekend"><div class="dnum">5</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">6</div><div class="items"><div class="empty">—</div></div></div></div></section><section class="week" data-week="8" data-label="Week 11 · 7–13 December"><div class="whead">Week 11 · 7–13 December 2026</div><div class="days"><div class="day"><div class="dnum">7</div><div class="items"><div class="chip checkable" data-order="0" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-12-07|0|Research and Professional Skills"><input type="checkbox" aria-label="Research and Professional Skills"><a class="cbody" href="https://canvas.bham.ac.uk/courses/87806/assignments" target="_blank" rel="noreferrer"><span class="ct">Research and Professional Skills</span><span class="cm">上传同伴互评 17:00</span></a></div><div class="chip checkable" data-order="1" style="--acc:#FF3B30;--dark:#B3261E" data-checkable data-id="2026-12-07|1|Intelligent Robotics"><input type="checkbox" aria-label="Intelligent Robotics"><a class="cbody" href="https://canvas.bham.ac.uk/courses/90242/assignments" target="_blank" rel="noreferrer"><span class="ct">Intelligent Robotics</span><span class="cm">小组项目演示 12/7 - 12/11</span></a></div></div></div><div class="day"><div class="dnum">8</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">9</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">10</div><div class="items"><div class="empty">—</div></div></div><div class="day"><div class="dnum">11</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">12</div><div class="items"><div class="empty">—</div></div></div><div class="day weekend"><div class="dnum">13</div><div class="items"><div class="empty">—</div></div></div></div></section></div>
+  </main>
+  <aside id="side">
+    <div class="ashead"><p class="ttl">Canvas 重要公告</p></div>
+    <div class="lists" id="lists">
+      <svg class="decor" viewBox="0 0 300 456" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="lgA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8E5B2E"/><stop offset="1" stop-color="#D09A5C"/></linearGradient><linearGradient id="lgB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#A05C24"/><stop offset="1" stop-color="#DFAF6B"/></linearGradient><linearGradient id="lgC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E5238"/><stop offset="1" stop-color="#B08A5E"/></linearGradient><linearGradient id="lgD" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A4E22"/><stop offset="1" stop-color="#C8904E"/></linearGradient></defs><g class="web"><path d="M4.0 4.0 L115.8 9.9 M4.0 4.0 L112.1 33.3 M4.0 4.0 L103.5 55.3 M4.0 4.0 L90.5 75.1 M4.0 4.0 L73.6 91.7 M4.0 4.0 L53.6 104.4 M4.0 4.0 L31.4 112.6 M4.0 4.0 L7.9 115.9" stroke="#8C8880" stroke-width=".7" opacity=".5"/><path d="M17.0 4.7 L18.2 7.5 L18.9 10.7 L18.7 14.3 L17.7 18.0 L15.8 21.6 L13.0 25.0 L9.4 28.0 L30.2 5.4 L31.1 10.6 L30.9 16.1 L29.6 21.8 L27.0 27.4 L23.2 32.6 L18.3 37.2 L12.3 40.8 L43.3 6.1 L43.9 13.7 L42.9 21.5 L40.4 29.4 L36.2 36.8 L30.6 43.6 L23.5 49.3 L15.1 53.7 L56.5 6.8 L56.7 16.8 L55.0 27.0 L51.2 36.9 L45.5 46.2 L37.9 54.5 L28.7 61.4 L18.0 66.6 L69.7 7.4 L69.6 19.9 L67.0 32.4 L62.0 44.5 L54.7 55.6 L45.3 65.5 L33.9 73.6 L20.9 79.5 L82.9 8.1 L82.4 23.0 L79.0 37.8 L72.9 52.0 L64.0 65.1 L52.6 76.4 L39.1 85.7 L23.8 92.4 L96.1 8.8 L95.2 26.1 L91.1 43.2 L83.7 59.5 L73.2 74.5 L60.0 87.4 L44.3 97.8 L26.7 105.2 L109.3 9.5 L108.0 29.2 L103.1 48.6 L94.5 67.1 L82.5 83.9" fill="none" stroke="#9A958C" stroke-width="1" opacity=".62" stroke-linecap="round"/><path d="M300.0 452.0 L208.1 447.2 M300.0 452.0 L211.3 427.7 M300.0 452.0 L218.4 409.4 M300.0 452.0 L229.4 393.0 M300.0 452.0 L243.5 379.4 M300.0 452.0 L260.3 369.0 M300.0 452.0 L278.9 362.5 M300.0 452.0 L298.4 360.0" stroke="#8C8880" stroke-width=".7" opacity=".5"/><path d="M289.0 451.4 L287.9 449.4 L287.3 446.9 L287.1 444.3 L287.5 441.4 L288.5 438.5 L290.1 435.6 L292.4 433.0 L295.3 430.7 L298.7 428.9 L275.9 447.7 L275.6 443.4 L276.2 438.9 L277.5 434.4 L279.8 430.0 L282.9 425.9 L286.8 422.2 L291.4 419.1 L296.7 416.9 L263.7 446.9 L263.7 440.7 L264.8 434.3 L267.1 428.1 L270.4 422.1 L274.9 416.6 L280.3 411.8 L286.7 407.9 L293.8 405.0 L251.5 447.0 L251.6 438.9 L253.1 430.6 L256.1 422.6 L260.4 414.9 L266.1 408.0 L273.1 401.9 L281.1 396.9 L290.1 393.2 L239.2 448.0 L239.3 438.0 L241.1 427.8 L244.7 417.9 L249.9 408.5 L256.8 399.9 L265.1 392.4 L274.7 386.3 L285.4 381.8 L296.9 379.0 L226.9 437.9 L228.9 425.8 L232.9 414.0 L238.9 402.8 L246.7 392.5 L256.3 383.5 L267.5 376.1 L279.8 370.6 L293.2 367.0 L214.4 438.9 L216.4 424.7 L220.7 411.0 L227.3 397.8 L236.1 385.8" fill="none" stroke="#9A958C" stroke-width="1" opacity=".62" stroke-linecap="round"/></g><g class="leaves"><g transform="translate(92.0 206.0) rotate(22)"><path d="M-32.00 -0.00 L-30.55 -3.69 L-29.09 -6.27 L-27.64 -8.06 L-26.18 -9.22 L-24.73 -10.40 L-23.27 -12.22 L-21.82 -14.66 L-20.36 -16.98 L-18.91 -18.30 L-17.45 -18.42 L-16.00 -18.12 L-14.55 -18.56 L-13.09 -20.30 L-11.64 -22.74 L-10.18 -24.55 L-8.73 -24.78 L-7.27 -23.66 L-5.82 -22.50 L-4.36 -22.61 L-2.91 -24.21 L-1.45 -26.22 L0.00 -27.12 L1.45 -26.22 L2.91 -24.21 L4.36 -22.61 L5.82 -22.50 L7.27 -23.66 L8.73 -24.78 L10.18 -24.55 L11.64 -22.74 L13.09 -20.30 L14.55 -18.56 L16.00 -18.12 L17.45 -18.42 L18.91 -18.30 L20.36 -16.98 L21.82 -14.66 L23.27 -12.22 L24.73 -10.40 L26.18 -9.22 L27.64 -8.06 L29.09 -6.27 L30.55 -3.69 L32.00 -0.00 L32.00 0.00 L30.55 3.69 L29.09 6.27 L27.64 8.06 L26.18 9.22 L24.73 10.40 L23.27 12.22 L21.82 14.66 L20.36 16.98 L18.91 18.30 L17.45 18.42 L16.00 18.12 L14.55 18.56 L13.09 20.30 L11.64 22.74 L10.18 24.55 L8.73 24.78 L7.27 23.66 L5.82 22.50 L4.36 22.61 L2.91 24.21 L1.45 26.22 L0.00 27.12 L-1.45 26.22 L-2.91 24.21 L-4.36 22.61 L-5.82 22.50 L-7.27 23.66 L-8.73 24.78 L-10.18 24.55 L-11.64 22.74 L-13.09 20.30 L-14.55 18.56 L-16.00 18.12 L-17.45 18.42 L-18.91 18.30 L-20.36 16.98 L-21.82 14.66 L-23.27 12.22 L-24.73 10.40 L-26.18 9.22 L-27.64 8.06 L-29.09 6.27 L-30.55 3.69 L-32.00 0.00 Z" fill="#3B2A18" opacity=".16" transform="translate(2.5 3)"/><path d="M-32.00 -0.00 L-30.55 -3.69 L-29.09 -6.27 L-27.64 -8.06 L-26.18 -9.22 L-24.73 -10.40 L-23.27 -12.22 L-21.82 -14.66 L-20.36 -16.98 L-18.91 -18.30 L-17.45 -18.42 L-16.00 -18.12 L-14.55 -18.56 L-13.09 -20.30 L-11.64 -22.74 L-10.18 -24.55 L-8.73 -24.78 L-7.27 -23.66 L-5.82 -22.50 L-4.36 -22.61 L-2.91 -24.21 L-1.45 -26.22 L0.00 -27.12 L1.45 -26.22 L2.91 -24.21 L4.36 -22.61 L5.82 -22.50 L7.27 -23.66 L8.73 -24.78 L10.18 -24.55 L11.64 -22.74 L13.09 -20.30 L14.55 -18.56 L16.00 -18.12 L17.45 -18.42 L18.91 -18.30 L20.36 -16.98 L21.82 -14.66 L23.27 -12.22 L24.73 -10.40 L26.18 -9.22 L27.64 -8.06 L29.09 -6.27 L30.55 -3.69 L32.00 -0.00 L32.00 0.00 L30.55 3.69 L29.09 6.27 L27.64 8.06 L26.18 9.22 L24.73 10.40 L23.27 12.22 L21.82 14.66 L20.36 16.98 L18.91 18.30 L17.45 18.42 L16.00 18.12 L14.55 18.56 L13.09 20.30 L11.64 22.74 L10.18 24.55 L8.73 24.78 L7.27 23.66 L5.82 22.50 L4.36 22.61 L2.91 24.21 L1.45 26.22 L0.00 27.12 L-1.45 26.22 L-2.91 24.21 L-4.36 22.61 L-5.82 22.50 L-7.27 23.66 L-8.73 24.78 L-10.18 24.55 L-11.64 22.74 L-13.09 20.30 L-14.55 18.56 L-16.00 18.12 L-17.45 18.42 L-18.91 18.30 L-20.36 16.98 L-21.82 14.66 L-23.27 12.22 L-24.73 10.40 L-26.18 9.22 L-27.64 8.06 L-29.09 6.27 L-30.55 3.69 L-32.00 0.00 Z" fill="url(#lgA)" stroke="#7A5A38" stroke-width=".5" opacity=".95"/><path d="M-30.0 0 L30.5 0 M-12.16 -1.25 L-6.40 -15.61 M-12.16 1.25 L-6.40 15.61 M-2.56 -1.43 L3.20 -17.89 M-2.56 1.43 L3.20 17.89 M7.04 -1.38 L12.80 -17.20 M7.04 1.38 L12.80 17.20 M16.64 -1.08 L22.40 -13.55 M16.64 1.08 L22.40 13.55 M26.24 -0.55 L32.00 -6.91 M26.24 0.55 L32.00 6.91" fill="none" stroke="#6E4F30" stroke-width=".7" opacity=".55"/></g><g transform="translate(226.0 232.0) rotate(-36)"><path d="M-28.00 -0.00 L-26.73 -3.24 L-25.45 -5.51 L-24.18 -7.09 L-22.91 -8.12 L-21.64 -9.15 L-20.36 -10.75 L-19.09 -12.90 L-17.82 -14.94 L-16.55 -16.10 L-15.27 -16.21 L-14.00 -15.94 L-12.73 -16.33 L-11.45 -17.86 L-10.18 -20.01 L-8.91 -21.61 L-7.64 -21.81 L-6.36 -20.82 L-5.09 -19.80 L-3.82 -19.90 L-2.55 -21.31 L-1.27 -23.08 L0.00 -23.87 L1.27 -23.08 L2.55 -21.31 L3.82 -19.90 L5.09 -19.80 L6.36 -20.82 L7.64 -21.81 L8.91 -21.61 L10.18 -20.01 L11.45 -17.86 L12.73 -16.33 L14.00 -15.94 L15.27 -16.21 L16.55 -16.10 L17.82 -14.94 L19.09 -12.90 L20.36 -10.75 L21.64 -9.15 L22.91 -8.12 L24.18 -7.09 L25.45 -5.51 L26.73 -3.24 L28.00 -0.00 L28.00 0.00 L26.73 3.24 L25.45 5.51 L24.18 7.09 L22.91 8.12 L21.64 9.15 L20.36 10.75 L19.09 12.90 L17.82 14.94 L16.55 16.10 L15.27 16.21 L14.00 15.94 L12.73 16.33 L11.45 17.86 L10.18 20.01 L8.91 21.61 L7.64 21.81 L6.36 20.82 L5.09 19.80 L3.82 19.90 L2.55 21.31 L1.27 23.08 L0.00 23.87 L-1.27 23.08 L-2.55 21.31 L-3.82 19.90 L-5.09 19.80 L-6.36 20.82 L-7.64 21.81 L-8.91 21.61 L-10.18 20.01 L-11.45 17.86 L-12.73 16.33 L-14.00 15.94 L-15.27 16.21 L-16.55 16.10 L-17.82 14.94 L-19.09 12.90 L-20.36 10.75 L-21.64 9.15 L-22.91 8.12 L-24.18 7.09 L-25.45 5.51 L-26.73 3.24 L-28.00 0.00 Z" fill="#3B2A18" opacity=".16" transform="translate(2.5 3)"/><path d="M-28.00 -0.00 L-26.73 -3.24 L-25.45 -5.51 L-24.18 -7.09 L-22.91 -8.12 L-21.64 -9.15 L-20.36 -10.75 L-19.09 -12.90 L-17.82 -14.94 L-16.55 -16.10 L-15.27 -16.21 L-14.00 -15.94 L-12.73 -16.33 L-11.45 -17.86 L-10.18 -20.01 L-8.91 -21.61 L-7.64 -21.81 L-6.36 -20.82 L-5.09 -19.80 L-3.82 -19.90 L-2.55 -21.31 L-1.27 -23.08 L0.00 -23.87 L1.27 -23.08 L2.55 -21.31 L3.82 -19.90 L5.09 -19.80 L6.36 -20.82 L7.64 -21.81 L8.91 -21.61 L10.18 -20.01 L11.45 -17.86 L12.73 -16.33 L14.00 -15.94 L15.27 -16.21 L16.55 -16.10 L17.82 -14.94 L19.09 -12.90 L20.36 -10.75 L21.64 -9.15 L22.91 -8.12 L24.18 -7.09 L25.45 -5.51 L26.73 -3.24 L28.00 -0.00 L28.00 0.00 L26.73 3.24 L25.45 5.51 L24.18 7.09 L22.91 8.12 L21.64 9.15 L20.36 10.75 L19.09 12.90 L17.82 14.94 L16.55 16.10 L15.27 16.21 L14.00 15.94 L12.73 16.33 L11.45 17.86 L10.18 20.01 L8.91 21.61 L7.64 21.81 L6.36 20.82 L5.09 19.80 L3.82 19.90 L2.55 21.31 L1.27 23.08 L0.00 23.87 L-1.27 23.08 L-2.55 21.31 L-3.82 19.90 L-5.09 19.80 L-6.36 20.82 L-7.64 21.81 L-8.91 21.61 L-10.18 20.01 L-11.45 17.86 L-12.73 16.33 L-14.00 15.94 L-15.27 16.21 L-16.55 16.10 L-17.82 14.94 L-19.09 12.90 L-20.36 10.75 L-21.64 9.15 L-22.91 8.12 L-24.18 7.09 L-25.45 5.51 L-26.73 3.24 L-28.00 0.00 Z" fill="url(#lgB)" stroke="#7A5A38" stroke-width=".5" opacity=".95"/><path d="M-26.0 0 L26.5 0 M-10.64 -1.10 L-5.60 -13.74 M-10.64 1.10 L-5.60 13.74 M-2.24 -1.26 L2.80 -15.75 M-2.24 1.26 L2.80 15.75 M6.16 -1.21 L11.20 -15.13 M6.16 1.21 L11.20 15.13 M14.56 -0.95 L19.60 -11.92 M14.56 0.95 L19.60 11.92 M22.96 -0.49 L28.00 -6.08 M22.96 0.49 L28.00 6.08" fill="none" stroke="#6E4F30" stroke-width=".7" opacity=".55"/></g><g transform="translate(108.0 300.0) rotate(68)"><path d="M-26.00 -0.00 L-24.82 -2.95 L-23.64 -5.01 L-22.45 -6.45 L-21.27 -7.38 L-20.09 -8.32 L-18.91 -9.77 L-17.73 -11.73 L-16.55 -13.58 L-15.36 -14.64 L-14.18 -14.74 L-13.00 -14.50 L-11.82 -14.85 L-10.64 -16.24 L-9.45 -18.19 L-8.27 -19.64 L-7.09 -19.83 L-5.91 -18.93 L-4.73 -18.00 L-3.55 -18.09 L-2.36 -19.37 L-1.18 -20.98 L0.00 -21.70 L1.18 -20.98 L2.36 -19.37 L3.55 -18.09 L4.73 -18.00 L5.91 -18.93 L7.09 -19.83 L8.27 -19.64 L9.45 -18.19 L10.64 -16.24 L11.82 -14.85 L13.00 -14.50 L14.18 -14.74 L15.36 -14.64 L16.55 -13.58 L17.73 -11.73 L18.91 -9.77 L20.09 -8.32 L21.27 -7.38 L22.45 -6.45 L23.64 -5.01 L24.82 -2.95 L26.00 -0.00 L26.00 0.00 L24.82 2.95 L23.64 5.01 L22.45 6.45 L21.27 7.38 L20.09 8.32 L18.91 9.77 L17.73 11.73 L16.55 13.58 L15.36 14.64 L14.18 14.74 L13.00 14.50 L11.82 14.85 L10.64 16.24 L9.45 18.19 L8.27 19.64 L7.09 19.83 L5.91 18.93 L4.73 18.00 L3.55 18.09 L2.36 19.37 L1.18 20.98 L0.00 21.70 L-1.18 20.98 L-2.36 19.37 L-3.55 18.09 L-4.73 18.00 L-5.91 18.93 L-7.09 19.83 L-8.27 19.64 L-9.45 18.19 L-10.64 16.24 L-11.82 14.85 L-13.00 14.50 L-14.18 14.74 L-15.36 14.64 L-16.55 13.58 L-17.73 11.73 L-18.91 9.77 L-20.09 8.32 L-21.27 7.38 L-22.45 6.45 L-23.64 5.01 L-24.82 2.95 L-26.00 0.00 Z" fill="#3B2A18" opacity=".16" transform="translate(2.5 3)"/><path d="M-26.00 -0.00 L-24.82 -2.95 L-23.64 -5.01 L-22.45 -6.45 L-21.27 -7.38 L-20.09 -8.32 L-18.91 -9.77 L-17.73 -11.73 L-16.55 -13.58 L-15.36 -14.64 L-14.18 -14.74 L-13.00 -14.50 L-11.82 -14.85 L-10.64 -16.24 L-9.45 -18.19 L-8.27 -19.64 L-7.09 -19.83 L-5.91 -18.93 L-4.73 -18.00 L-3.55 -18.09 L-2.36 -19.37 L-1.18 -20.98 L0.00 -21.70 L1.18 -20.98 L2.36 -19.37 L3.55 -18.09 L4.73 -18.00 L5.91 -18.93 L7.09 -19.83 L8.27 -19.64 L9.45 -18.19 L10.64 -16.24 L11.82 -14.85 L13.00 -14.50 L14.18 -14.74 L15.36 -14.64 L16.55 -13.58 L17.73 -11.73 L18.91 -9.77 L20.09 -8.32 L21.27 -7.38 L22.45 -6.45 L23.64 -5.01 L24.82 -2.95 L26.00 -0.00 L26.00 0.00 L24.82 2.95 L23.64 5.01 L22.45 6.45 L21.27 7.38 L20.09 8.32 L18.91 9.77 L17.73 11.73 L16.55 13.58 L15.36 14.64 L14.18 14.74 L13.00 14.50 L11.82 14.85 L10.64 16.24 L9.45 18.19 L8.27 19.64 L7.09 19.83 L5.91 18.93 L4.73 18.00 L3.55 18.09 L2.36 19.37 L1.18 20.98 L0.00 21.70 L-1.18 20.98 L-2.36 19.37 L-3.55 18.09 L-4.73 18.00 L-5.91 18.93 L-7.09 19.83 L-8.27 19.64 L-9.45 18.19 L-10.64 16.24 L-11.82 14.85 L-13.00 14.50 L-14.18 14.74 L-15.36 14.64 L-16.55 13.58 L-17.73 11.73 L-18.91 9.77 L-20.09 8.32 L-21.27 7.38 L-22.45 6.45 L-23.64 5.01 L-24.82 2.95 L-26.00 0.00 Z" fill="url(#lgC)" stroke="#7A5A38" stroke-width=".5" opacity=".95"/><path d="M-24.0 0 L24.5 0 M-9.88 -1.00 L-5.20 -12.49 M-9.88 1.00 L-5.20 12.49 M-2.08 -1.15 L2.60 -14.31 M-2.08 1.15 L2.60 14.31 M5.72 -1.10 L10.40 -13.76 M5.72 1.10 L10.40 13.76 M13.52 -0.87 L18.20 -10.84 M13.52 0.87 L18.20 10.84 M21.32 -0.44 L26.00 -5.53 M21.32 0.44 L26.00 5.53" fill="none" stroke="#6E4F30" stroke-width=".7" opacity=".55"/></g><g transform="translate(216.0 384.0) rotate(-18)"><path d="M-31.00 -0.00 L-29.59 -3.54 L-28.18 -6.01 L-26.77 -7.74 L-25.36 -8.85 L-23.95 -9.98 L-22.55 -11.73 L-21.14 -14.07 L-19.73 -16.30 L-18.32 -17.57 L-16.91 -17.68 L-15.50 -17.39 L-14.09 -17.82 L-12.68 -19.48 L-11.27 -21.83 L-9.86 -23.57 L-8.45 -23.79 L-7.05 -22.72 L-5.64 -21.60 L-4.23 -21.71 L-2.82 -23.25 L-1.41 -25.17 L0.00 -26.04 L1.41 -25.17 L2.82 -23.25 L4.23 -21.71 L5.64 -21.60 L7.05 -22.72 L8.45 -23.79 L9.86 -23.57 L11.27 -21.83 L12.68 -19.48 L14.09 -17.82 L15.50 -17.39 L16.91 -17.68 L18.32 -17.57 L19.73 -16.30 L21.14 -14.07 L22.55 -11.73 L23.95 -9.98 L25.36 -8.85 L26.77 -7.74 L28.18 -6.01 L29.59 -3.54 L31.00 -0.00 L31.00 0.00 L29.59 3.54 L28.18 6.01 L26.77 7.74 L25.36 8.85 L23.95 9.98 L22.55 11.73 L21.14 14.07 L19.73 16.30 L18.32 17.57 L16.91 17.68 L15.50 17.39 L14.09 17.82 L12.68 19.48 L11.27 21.83 L9.86 23.57 L8.45 23.79 L7.05 22.72 L5.64 21.60 L4.23 21.71 L2.82 23.25 L1.41 25.17 L0.00 26.04 L-1.41 25.17 L-2.82 23.25 L-4.23 21.71 L-5.64 21.60 L-7.05 22.72 L-8.45 23.79 L-9.86 23.57 L-11.27 21.83 L-12.68 19.48 L-14.09 17.82 L-15.50 17.39 L-16.91 17.68 L-18.32 17.57 L-19.73 16.30 L-21.14 14.07 L-22.55 11.73 L-23.95 9.98 L-25.36 8.85 L-26.77 7.74 L-28.18 6.01 L-29.59 3.54 L-31.00 0.00 Z" fill="#3B2A18" opacity=".16" transform="translate(2.5 3)"/><path d="M-31.00 -0.00 L-29.59 -3.54 L-28.18 -6.01 L-26.77 -7.74 L-25.36 -8.85 L-23.95 -9.98 L-22.55 -11.73 L-21.14 -14.07 L-19.73 -16.30 L-18.32 -17.57 L-16.91 -17.68 L-15.50 -17.39 L-14.09 -17.82 L-12.68 -19.48 L-11.27 -21.83 L-9.86 -23.57 L-8.45 -23.79 L-7.05 -22.72 L-5.64 -21.60 L-4.23 -21.71 L-2.82 -23.25 L-1.41 -25.17 L0.00 -26.04 L1.41 -25.17 L2.82 -23.25 L4.23 -21.71 L5.64 -21.60 L7.05 -22.72 L8.45 -23.79 L9.86 -23.57 L11.27 -21.83 L12.68 -19.48 L14.09 -17.82 L15.50 -17.39 L16.91 -17.68 L18.32 -17.57 L19.73 -16.30 L21.14 -14.07 L22.55 -11.73 L23.95 -9.98 L25.36 -8.85 L26.77 -7.74 L28.18 -6.01 L29.59 -3.54 L31.00 -0.00 L31.00 0.00 L29.59 3.54 L28.18 6.01 L26.77 7.74 L25.36 8.85 L23.95 9.98 L22.55 11.73 L21.14 14.07 L19.73 16.30 L18.32 17.57 L16.91 17.68 L15.50 17.39 L14.09 17.82 L12.68 19.48 L11.27 21.83 L9.86 23.57 L8.45 23.79 L7.05 22.72 L5.64 21.60 L4.23 21.71 L2.82 23.25 L1.41 25.17 L0.00 26.04 L-1.41 25.17 L-2.82 23.25 L-4.23 21.71 L-5.64 21.60 L-7.05 22.72 L-8.45 23.79 L-9.86 23.57 L-11.27 21.83 L-12.68 19.48 L-14.09 17.82 L-15.50 17.39 L-16.91 17.68 L-18.32 17.57 L-19.73 16.30 L-21.14 14.07 L-22.55 11.73 L-23.95 9.98 L-25.36 8.85 L-26.77 7.74 L-28.18 6.01 L-29.59 3.54 L-31.00 0.00 Z" fill="url(#lgD)" stroke="#7A5A38" stroke-width=".5" opacity=".95"/><path d="M-29.0 0 L29.5 0 M-11.78 -1.20 L-6.20 -14.99 M-11.78 1.20 L-6.20 14.99 M-2.48 -1.37 L3.10 -17.18 M-2.48 1.37 L3.10 17.18 M6.82 -1.32 L12.40 -16.51 M6.82 1.32 L12.40 16.51 M16.12 -1.04 L21.70 -13.00 M16.12 1.04 L21.70 13.00 M25.42 -0.53 L31.00 -6.63 M25.42 0.53 L31.00 6.63" fill="none" stroke="#6E4F30" stroke-width=".7" opacity=".55"/></g></g></svg>
+      <div class="items annlist" id="annlist"><div class="acard" data-checkable data-id="ann|Intelligent Robotics|Assignment 1 已发布 · 10/23 截止" data-group="1" data-order="0" data-posted="2026-10-06" style="--acc:#FF3B30;--dark:#B3261E"><input type="checkbox" aria-label="Intelligent Robotics"><a href="https://canvas.bham.ac.uk/courses/90242/discussion_topics/1308658" target="_blank" rel="noreferrer"><b>Intelligent Robotics</b><span>Assignment 1 已发布 · 10/23 截止</span><span>个人作业，迟交不接受</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Research and Professional Skills|第 3-5 周任选一个 DOE 训练" data-group="1" data-order="1" data-posted="2026-10-06" style="--acc:#FF9500;--dark:#8A5000"><input type="checkbox" aria-label="Research and Professional Skills"><a href="https://canvas.bham.ac.uk/courses/87806/modules" target="_blank" rel="noreferrer"><b>Research and Professional Skills</b><span>第 3-5 周任选一个 DOE 训练</span><span>Factorial / Response Surface / Taguchi</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Intelligent Robotics|最终项目分组已公布" data-group="2" data-order="2" data-posted="2026-10-08" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="Intelligent Robotics"><a href="https://canvas.bham.ac.uk/courses/90242/discussion_topics/1309689" target="_blank" rel="noreferrer"><b>Intelligent Robotics</b><span>最终项目分组已公布</span><span>去 Canvas 的 People 标签看组员</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Industrial Automation and Robotics|第 3 周课程顺序" data-group="2" data-order="3" data-posted="2026-10-11" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a href="https://canvas.bham.ac.uk/courses/87771/discussion_topics/1310240" target="_blank" rel="noreferrer"><b>Industrial Automation and Robotics</b><span>第 3 周课程顺序</span><span>周一 Automation Support Systems</span><span>周四 Robot Simulation</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Industrial Automation and Robotics|RoboDK 机器人仿真软件" data-group="2" data-order="4" data-posted="2026-10-13" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a href="https://canvas.bham.ac.uk/courses/87771/discussion_topics/1311069" target="_blank" rel="noreferrer"><b>Industrial Automation and Robotics</b><span>RoboDK 机器人仿真软件</span><span>通过 AppsAnywhere 使用，链接见公告</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00" data-group="2" data-order="5" data-posted="2026-10-11" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="Industrial Automation and Robotics"><a href="https://canvas.bham.ac.uk/courses/87771/discussion_topics/1310246" target="_blank" rel="noreferrer"><b>Industrial Automation and Robotics</b><span>在线学术报告 10/15 10:00</span><span>Zoom 密码 996279</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Research and Professional Skills|计算机实验分组时段" data-group="2" data-order="6" data-posted="2026-10-08" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="Research and Professional Skills"><a href="https://canvas.bham.ac.uk/courses/87806/discussion_topics/1309542" target="_blank" rel="noreferrer"><b>Research and Professional Skills</b><span>计算机实验分组时段</span><span>10/20 与 10/27 周二，先查分组</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|School of Engineering - Student Guide|SEEN 秋季招聘会 10/21 11:00" data-group="4" data-order="7" data-posted="2026-10-12" style="--acc:#30B0C7;--dark:#1A6B7C"><input type="checkbox" aria-label="School of Engineering - Student Guide"><a href="https://canvas.bham.ac.uk/courses/90040/discussion_topics/1303344" target="_blank" rel="noreferrer"><b>School of Engineering - Student Guide</b><span>SEEN 秋季招聘会 10/21 11:00</span><span>AFBELive 会议 10/30</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|Libraries and Learning Resources for EPS 26/27|PGT Skills Chat 11/04 13:00" data-group="4" data-order="8" data-posted="2026-10-13" style="--acc:#30B0C7;--dark:#1A6B7C"><input type="checkbox" aria-label="Libraries and Learning Resources for EPS 26/27"><a href="https://canvas.bham.ac.uk/courses/89887/discussion_topics/1311054" target="_blank" rel="noreferrer"><b>Libraries and Learning Resources for EPS 26/27</b><span>PGT Skills Chat 11/04 13:00</span><span>线上讲座，需提前报名</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|本日历之外|2027 年 1 月 11 日 17:00" data-group="1" data-order="10" data-posted="" style="--acc:#FF3B30;--dark:#B3261E"><input type="checkbox" aria-label="本日历之外"><a href="https://canvas.bham.ac.uk/courses/87806/assignments" target="_blank" rel="noreferrer"><b>本日历之外</b><span>2027 年 1 月 11 日 17:00</span><span>Research and Professional Skills 小组报告（占 50%）</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|考试期|2027 年 1 月 11 - 16 日" data-group="1" data-order="11" data-posted="" style="--acc:#FF3B30;--dark:#B3261E"><input type="checkbox" aria-label="考试期"><a href="https://intranet.birmingham.ac.uk/student/academic-support/registry/exams/dates-and-timetable.aspx" target="_blank" rel="noreferrer"><b>考试期</b><span>2027 年 1 月 11 - 16 日</span><span>个人考试时间表 11 月 30 日前发布</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div><div class="acard" data-checkable data-id="ann|待确认|Intelligent Robotics 的 Assignment 1" data-group="1" data-order="12" data-posted="" style="--acc:#5856D6;--dark:#3634A3"><input type="checkbox" aria-label="待确认"><a href="https://canvas.bham.ac.uk/courses/90242/discussion_topics/1308658" target="_blank" rel="noreferrer"><b>待确认</b><span>Intelligent Robotics 的 Assignment 1</span><span>公告写 23:59，课程页写 17:00</span><span>建议按 17:00 完成</span></a><button class="newbtn" type="button" title="点一下表示已看，回到排序位置"><i>新消息</i></button><button class="pinitem" type="button" title="置顶这条">置顶</button></div></div>
+    <button id="showdone" class="donebtn" type="button">已完成的公告</button>
+    </div>
+  </aside>
+</div>
+<div class="pager">
+  <button id="prev" class="tri" aria-label="上一周">◀</button>
+  <button id="home" class="tri home" type="button" aria-label="回到本周">本周</button>
+  <span class="weeklabel" id="weeklabel"></span>
+  <button id="next" class="tri" aria-label="下一周">▶</button>
+</div>
+</div>
+<script>
+(function(){
+  var KEY="wode_shixiang_done_v1";
+  var store=null;
+  try{store=window.localStorage;}catch(e){}
+  var state={};
+  if(store){try{state=JSON.parse(store.getItem(KEY)||"{}")||{};}catch(e){state={};}}
+  /* 被「恢复」的已完成公告：{id: 到期时间戳}，3 天内留在主列表里，到期自动收回已完成 */
+  var RKEY="wode_restored_v1";
+  var RESTORE_DAYS=3;
+  var restored={};
+  if(store){try{restored=JSON.parse(store.getItem(RKEY)||"{}")||{};}catch(e){restored={};}}
+  function saveRestored(){if(store){try{store.setItem(RKEY,JSON.stringify(restored));}catch(e){}}}
+
+  var allItems=[].slice.call(document.querySelectorAll("[data-order]"));
+  var chips=allItems.filter(function(el){return el.hasAttribute("data-checkable");});
+  function save(){
+    if(!store)return;
+    try{store.setItem(KEY,JSON.stringify(state));}catch(e){}
+  }
+
+  function layout(dayEl,animate){
+    var items=[].slice.call(dayEl.querySelectorAll("[data-order]"));
+    if(items.length<2&&!animate)return;
+    if(animate){items.forEach(function(el){el.__y0=el.getBoundingClientRect().top;});}
+    function bucket(el){
+      if(!el.hasAttribute("data-checkable"))return 0;   /* 课程按时间留在原位 */
+      if(el.classList.contains("done"))return 9;        /* 勾完的排最后 */
+      if(el.classList.contains("isnew"))return 0;       /* 新消息临时置顶 */
+      if(el.dataset.pinTs)return 1;                     /* 用户置顶其次 */
+      return 1+(+(el.dataset.group||4));                /* 其余按重要性分组 */
+    }
+    items.sort(function(a,b){
+      var ba=bucket(a), bb=bucket(b);
+      if(ba!==bb)return ba-bb;
+      if(ba===0&&a.dataset.pinTs&&b.dataset.pinTs){
+        return (+b.dataset.pinTs)-(+a.dataset.pinTs);   /* 最近置顶的在最上面 */
+      }
+      return (+a.dataset.order)-(+b.dataset.order);
+    });
+    items.forEach(function(el){dayEl.appendChild(el);});
+    if(animate){
+      items.forEach(function(el){
+        var dy=el.__y0-el.getBoundingClientRect().top;
+        if(Math.abs(dy)>0.5&&el.animate){
+          el.animate([{transform:"translateY("+dy+"px)"},{transform:"translateY(0)"}],
+            {duration:300,easing:"cubic-bezier(.32,.72,0,1)"});
+        }
+      });
+    }
+  }
+
+  function applyAll(animate){
+    chips.forEach(function(c){
+      var on=!!state[c.dataset.id];
+      c.querySelector("input").checked=on;
+      c.classList.toggle("done",on);
+    });
+    [].slice.call(document.querySelectorAll(".items")).forEach(function(box){layout(box,animate);});
+  }
+
+  /* 课程：过了结束时间自动打勾（不参与用户勾选，也不挪位置） */
+  function autoTick(){
+    var now=Date.now();
+    [].slice.call(document.querySelectorAll("[data-ends]")).forEach(function(el){
+      var end=new Date(el.getAttribute("data-ends")).getTime();
+      if(!isNaN(end)&&now>=end)el.classList.add("done");
+    });
+  }
+
+  /* ---- 分段吸附 + 三角按钮翻周 ---- */
+  var weeks=[].slice.call(document.querySelectorAll(".weeks .week"));
+  var prevBtn=document.getElementById("prev");
+  var nextBtn=document.getElementById("next");
+  var homeBtn=document.getElementById("home");
+  var labelEl=document.getElementById("weeklabel");
+  var idx=0;
+  var TERM="wode_week_idx_v1";
+  if(store){var saved=parseInt(store.getItem(TERM)||"0",10);if(!isNaN(saved)&&saved>=0&&saved<weeks.length)idx=saved;}
+  function headH(){
+    var h=document.querySelector("header");
+    return h?Math.round(h.getBoundingClientRect().height):150;
+  }
+  function setActive(i,save){
+    idx=Math.max(0,Math.min(weeks.length-1,i));
+    labelEl.textContent=weeks[idx].dataset.label||"";
+    prevBtn.disabled=idx===0;
+    nextBtn.disabled=idx===weeks.length-1;
+    if(homeBtn)homeBtn.disabled=idx===homeIdx();
+    if(save&&store){try{store.setItem(TERM,String(idx));}catch(e){}}
+  }
+  /* 含「今天」的那一周就是本周，按钮直接跳回去 */
+  function homeIdx(){
+    for(var i=0;i<weeks.length;i++){if(weeks[i].querySelector(".day.today"))return i;}
+    return 0;
+  }
+  function goTo(i){
+    i=Math.max(0,Math.min(weeks.length-1,i));
+    weeks[i].scrollIntoView({behavior:"smooth",block:"start"});
+    setActive(i,true);
+  }
+  prevBtn.addEventListener("click",function(){goTo(idx-1);});
+  nextBtn.addEventListener("click",function(){goTo(idx+1);});
+  if(homeBtn)homeBtn.addEventListener("click",function(){goTo(homeIdx());});
+
+  /* 一次滚轮/方向键 = 平滑滑到上一周或下一周 */
+  var lock=false;
+  function step(dir){
+    if(lock)return;
+    var t=Math.max(0,Math.min(weeks.length-1,idx+dir));
+    if(t===idx)return;
+    lock=true;
+    goTo(t);
+    setTimeout(function(){lock=false;},620);
+  }
+  window.addEventListener("wheel",function(e){
+    if(e.ctrlKey||e.metaKey)return;              /* 页面缩放不拦 */
+    if(Math.abs(e.deltaY)<2)return;
+    /* 鼠标停在公告栏里：先让公告栏自己滚，滚到尽头才翻周 */
+    var box=e.target&&e.target.closest?e.target.closest(".annlist"):null;
+    if(box&&box.scrollHeight>box.clientHeight+2){
+      var atTop=box.scrollTop<=0;
+      var atBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-2;
+      if((e.deltaY>0&&!atBottom)||(e.deltaY<0&&!atTop))return;
+    }
+    e.preventDefault();
+    step(e.deltaY>0?1:-1);
+  },{passive:false});
+  window.addEventListener("keydown",function(e){
+    if(e.key==="ArrowDown"||e.key==="PageDown"){e.preventDefault();step(1);}
+    if(e.key==="ArrowUp"||e.key==="PageUp"){e.preventDefault();step(-1);}
+  });
+
+  var tick=false;
+  function syncFromScroll(){
+    tick=false;
+    var line=headH()+8,best=0,bestD=1e9;
+    weeks.forEach(function(w,k){
+      var d=Math.abs(w.getBoundingClientRect().top-line);
+      if(d<bestD){bestD=d;best=k;}
+    });
+    setActive(best,true);
+  }
+  window.addEventListener("scroll",function(){
+    if(!tick){tick=true;requestAnimationFrame(syncFromScroll);}
+  },{passive:true});
+
+  /* 宽屏时右侧公告栏一直贴到窗口底部 */
+  function sizeSide(){
+    var lists=document.getElementById("lists"),side=document.getElementById("side");
+    if(!lists||!side)return;
+    if(window.innerWidth<1180){lists.style.height="";return;}
+    /* 公告栏吸在顶栏下沿，所以按「顶栏 + 小标题」算高度，不受当前滚动位置影响 */
+    var head=lists.getBoundingClientRect().top-side.getBoundingClientRect().top;
+    var top=headH()+10+head;
+    lists.style.height=Math.max(240,Math.round(window.innerHeight-top-14))+"px";
+  }
+  /* 顶栏高度 → 吸附偏移；某周比屏幕高时退化成轻柔吸附 */
+  function setupSnap(){
+    var h=headH();
+    document.documentElement.style.setProperty("--snap-top",(h+10)+"px");
+    var room=window.innerHeight-h-24;
+    var tooTall=weeks.some(function(w){return w.getBoundingClientRect().height>room;});
+    document.documentElement.style.scrollSnapType=tooTall?"y proximity":"y mandatory";
+    sizeSide();
+  }
+  window.addEventListener("resize",setupSnap);
+
+  chips.forEach(function(c){
+    var box=c.querySelector("input");
+    box.addEventListener("change",function(){
+      var id=c.dataset.id;
+      if(box.checked){state[id]=1;}
+      else{delete state[id];if(c.classList.contains("acard"))c.classList.remove("archived");}
+      if(c.classList.contains("acard")){delete restored[id];saveRestored();}
+      c.classList.toggle("done",box.checked);
+      layout(c.parentNode,true);
+      save();
+    });
+  });
+
+  /* 公告：勾了先划线，下次打开才收进「已完成」（归档在下方 applyAll 之后执行） */
+  var doneBtn=document.getElementById("showdone");
+  var listsEl=document.getElementById("lists");
+  function pushIn(up){
+    if(!listsEl)return;
+    listsEl.classList.remove("pushin","pushdown");
+    void listsEl.offsetWidth;
+    listsEl.classList.add(up?"pushin":"pushdown");
+  }
+  if(doneBtn){
+    doneBtn.addEventListener("click",function(){
+      var on=!document.body.classList.contains("showdone");
+      document.body.classList.toggle("showdone",on);
+      doneBtn.classList.toggle("on",on);
+      doneBtn.textContent=on?"返回":"已完成的公告";
+      applyPins();   /* 已完成视图里右上角的「置顶」键变成「恢复」键 */
+      pushIn(on);   /* 打开已完成：从下往上推；点返回：从上往下落 */
+    });
+  }
+  window.addEventListener("beforeunload",save);
+  document.addEventListener("visibilitychange",function(){if(document.hidden)save();});
+  autoTick();
+  setInterval(autoTick,30000);
+  applyAll(false);
+  setupSnap();
+  setActive(idx,false);
+  /* 把当周对齐到顶栏下沿：顶栏高度可能随字体/滚动条变化，所以顶栏一变就重算并重新对齐 */
+  function alignWeek(){
+    var s=weeks[idx];
+    if(!s)return;
+    var top=s.getBoundingClientRect().top+window.scrollY-headH()-10;
+    window.scrollTo({top:Math.max(0,top),behavior:"auto"});
+    setActive(idx,false);
+  }
+  function refreshLayout(){
+    setupSnap();
+    alignWeek();
+  }
+  refreshLayout();
+  requestAnimationFrame(refreshLayout);
+  window.addEventListener("load",refreshLayout);
+  if(window.ResizeObserver){
+    new ResizeObserver(refreshLayout).observe(document.querySelector("header"));
+  }
+
+  /* ---- 点「周报」＝更新：浮动一下 + 复制「更新」+ 刷新 ---- */
+  function copyText(t){
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(t).then(function(){return true;}).catch(function(){return false;});
+    }
+    try{
+      var ta=document.createElement("textarea");ta.value=t;ta.style.position="fixed";ta.style.opacity="0";
+      document.body.appendChild(ta);ta.select();var ok=document.execCommand("copy");
+      document.body.removeChild(ta);return Promise.resolve(ok);
+    }catch(e){return Promise.resolve(false);}
+  }
+  var brand=document.getElementById("brand");
+  brand.addEventListener("click",function(){
+    if(brand.classList.contains("float"))return;
+    brand.classList.add("float");
+    copyText("更新");
+    setTimeout(function(){
+      brand.classList.remove("float");
+      location.reload();
+    },1200);
+  });
+
+  /* ---- 每条公告自己的置顶键：按了就跳到列表第一位 ---- */
+  var PKEY="wode_pins_v1";
+  var pins={};
+  if(store){try{pins=JSON.parse(store.getItem(PKEY)||"{}")||{};}catch(e){pins={};}}
+  function savePins(){if(store){try{store.setItem(PKEY,JSON.stringify(pins));}catch(e){}}}
+  function applyPins(){
+    var inDone=document.body.classList.contains("showdone");
+    [].slice.call(document.querySelectorAll(".acard")).forEach(function(c){
+      var ts=pins[c.dataset.id];
+      if(ts){c.dataset.pinTs=String(ts);c.classList.add("pinned");}
+      else{delete c.dataset.pinTs;c.classList.remove("pinned");}
+      var b=c.querySelector(".pinitem");
+      if(b){
+        b.textContent=inDone?"恢复":(ts?"已置顶":"置顶");
+        b.title=inDone?"从已完成里拿出来，3 天内留在公告栏上":"置顶这条";
+      }
+    });
+  }
+  /* 已完成视图里的「恢复」：取消勾选、放回主列表，3 天后自动再收回已完成 */
+  function restoreCard(card){
+    var id=card.dataset.id;
+    delete state[id];save();
+    restored[id]=Date.now()+RESTORE_DAYS*86400000;saveRestored();
+    var box=card.querySelector("input");
+    if(box)box.checked=false;
+    card.classList.remove("done","archived");
+    applyPins();
+    if(annBox)layout(annBox,true);
+  }
+  [].slice.call(document.querySelectorAll(".pinitem")).forEach(function(b){
+    b.addEventListener("click",function(ev){
+      ev.preventDefault();ev.stopPropagation();
+      var card=b.closest(".acard"),id=card.dataset.id;
+      if(document.body.classList.contains("showdone")){restoreCard(card);return;}
+      if(pins[id])delete pins[id];
+      else pins[id]=Date.now();
+      savePins();applyPins();
+      if(annBox)layout(annBox,true);
+    });
+  });
+  applyPins();
+  var annBox=document.getElementById("annlist");
+  if(annBox)layout(annBox,false);
+  /* 恢复期内的公告留在主列表；已过期的重新收进「已完成」 */
+  [].slice.call(document.querySelectorAll(".acard")).forEach(function(c){
+    var until=restored[c.dataset.id];
+    if(until===undefined)return;
+    if(until>Date.now()){c.classList.add("restored");c.title="恢复中，3 天后自动回到「已完成」";}
+    else{delete restored[c.dataset.id];c.classList.add("archived");}
+  });
+  saveRestored();
+  /* 已勾选的公告：这次打开就收进「已完成」，不在主列表里显示 */
+  [].slice.call(document.querySelectorAll(".acard.done")).forEach(function(c){
+    c.classList.add("archived");
+  });
+  /* 发布超过 7 天的公告也自动收进「已完成」 */
+  var today=new Date();today.setHours(0,0,0,0);
+  [].slice.call(document.querySelectorAll(".acard[data-posted]")).forEach(function(c){
+    if(restored[c.dataset.id])return;   /* 恢复期内的不受 7 天规则影响 */
+    var p=c.dataset.posted;
+    if(!p)return;
+    var d=new Date(p+"T00:00:00");
+    if(isNaN(d.getTime()))return;
+    if((today-d)/86400000>7)c.classList.add("archived");
+  });
+
+  /* ---- 新消息：刷新后新出现的公告，先在最顶端停 30 秒（带蓝色填充），再回到重要性排序位置 ---- */
+  var SKEY="wode_seen_ann_v1";
+  var seen=null;
+  if(store){try{seen=JSON.parse(store.getItem(SKEY)||"null");}catch(e){seen=null;}}
+  var cards=[].slice.call(document.querySelectorAll(".acard"));
+  function dismissNew(card){
+    if(!card||!card.classList.contains("isnew"))return;
+    card.classList.remove("isnew");
+    if(annBox)layout(annBox,true);
+  }
+  [].slice.call(document.querySelectorAll(".newbtn")).forEach(function(b){
+    b.addEventListener("click",function(ev){
+      ev.preventDefault();ev.stopPropagation();
+      dismissNew(b.closest(".acard"));
+    });
+  });
+  var fresh=[];
+  if(!seen){
+    seen={};
+    cards.forEach(function(c){seen[c.dataset.id]=1;});
+    if(store){try{store.setItem(SKEY,JSON.stringify(seen));}catch(e){}}
+  }else{
+    fresh=cards.filter(function(c){return !seen[c.dataset.id];});
+  }
+  /* data-alwaysnew（仅测试公告用）：不管以前看没看过，这次加载都当新消息演示一遍 */
+  cards.forEach(function(c){if(c.dataset.alwaysnew&&fresh.indexOf(c)<0)fresh.push(c);});
+  if(fresh.length){
+    fresh.forEach(function(c){c.classList.add("isnew");seen[c.dataset.id]=1;});
+    if(store){try{store.setItem(SKEY,JSON.stringify(seen));}catch(e){}}
+    if(annBox)layout(annBox,false);
+    setTimeout(function(){
+      fresh.forEach(function(c){c.classList.remove("isnew");});
+      if(annBox)layout(annBox,true);
+    },30000);
+  }
+
+  /* ---- 有新内容时在顶部浮出提示：停留 5 秒，蓝色从左往右填充 ---- */
+  var TOAST_MS=5000;
+  var TEST_TOAST=false;   /* 演示用：本地版每次打开都弹一条测试提示；发布版为 false */
+  var toastEl=document.getElementById("toast");
+  var thead=document.getElementById("thead");
+  var trows=document.getElementById("trows");
+  var tTimer=null;
+  function hideToast(){
+    if(!toastEl)return;
+    if(tTimer){clearTimeout(tTimer);tTimer=null;}
+    toastEl.classList.remove("show");
+  }
+  if(toastEl)toastEl.addEventListener("click",hideToast);
+  function showToast(rows,headText){
+    if(!toastEl||!rows.length)return;
+    thead.textContent=headText;
+    while(trows.firstChild)trows.removeChild(trows.firstChild);
+    rows.slice(0,4).forEach(function(r){
+      var line=document.createElement("div");
+      line.className="trow";
+      var tag=document.createElement("span");
+      tag.className="tag"+(r.cls?" "+r.cls:"");
+      tag.textContent=r.tag;
+      var txt=document.createElement("span");
+      var em=document.createElement("em");
+      em.textContent=r.title;
+      txt.appendChild(em);
+      if(r.text)txt.appendChild(document.createTextNode("（"+r.text+"）"));
+      line.appendChild(tag);
+      line.appendChild(txt);
+      trows.appendChild(line);
+    });
+    if(rows.length>4){
+      var more=document.createElement("div");
+      more.className="trow";
+      more.appendChild(document.createTextNode("还有 "+(rows.length-4)+" 条"));
+      trows.appendChild(more);
+    }
+    void toastEl.offsetWidth;
+    toastEl.classList.add("show");
+    tTimer=setTimeout(hideToast,TOAST_MS);
+  }
+  function fmtMD(iso){
+    var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||"");
+    return m?(+m[2])+"/"+(+m[3]):"";
+  }
+  function chipRow(el){
+    var id=el.dataset.id||"";
+    var parts=id.split("|");
+    var iso=parts[0]==="cls"?parts[1]:(parts.length>1?parts[0]:String(el.dataset.ends||"").split("T")[0]);
+    var ct=el.querySelector(".ct"),cms=el.querySelectorAll(".cm"),detail=[];
+    for(var i=0;i<cms.length&&i<2;i++)detail.push(cms[i].textContent.replace(/\s+/g," ").trim());
+    return {tag:"日历",cls:"cal",title:(fmtMD(iso)?fmtMD(iso)+" ":"")+(ct?ct.textContent:""),text:detail.join(" · ")};
+  }
+  function annRow(el){
+    var b=el.querySelector("b"),sp=el.querySelectorAll("span");
+    return {tag:"公告",cls:"ann",title:b?b.textContent:"",text:sp.length?sp[0].textContent:""};
+  }
+  /* 日历条目 + 公告的 id 合起来存一份；下次打开就能认出哪条是这次新加的 */
+  var TKEY="wode_seen_items_v1";
+  var seenI=null;
+  if(store){try{seenI=JSON.parse(store.getItem(TKEY)||"null");}catch(e){seenI=null;}}
+  function saveSeenI(){if(store){try{store.setItem(TKEY,JSON.stringify(seenI));}catch(e){}}}
+  var watched=[].slice.call(document.querySelectorAll(".chip[data-id], .acard"));
+  var toastRows=[];
+  if(!seenI){
+    seenI={};
+    watched.forEach(function(el){seenI[el.dataset.id]=1;});
+    saveSeenI();
+  }else{
+    watched.forEach(function(el){
+      if(seenI[el.dataset.id])return;
+      seenI[el.dataset.id]=1;
+      toastRows.push(el.classList.contains("acard")?annRow(el):chipRow(el));
+    });
+    saveSeenI();
+  }
+  if(TEST_TOAST){
+    toastRows.unshift({tag:"测试",cls:"test",title:"这是一条测试提示",
+      text:"有新公告或新日程时，这里会浮出来告诉你是什么，停 5 秒"});
+  }
+  if(toastRows.length){
+    var realRows=toastRows.filter(function(r){return r.cls!=="test";});
+    showToast(toastRows,realRows.length?"上次打开之后有 "+realRows.length+" 条新内容":"新内容提示（测试）");
+  }
+
+})();
+</script>
+</body>
+</html>
