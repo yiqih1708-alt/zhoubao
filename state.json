@@ -1,6 +1,6 @@
 {
  "v": 1,
- "ts": "2026-10-14T11:19:22.166Z",
+ "ts": "2026-10-14T11:19:44.178Z",
  "done": {
   "ann|Intelligent Robotics|最终项目分组已公布": [
    1,
@@ -18,13 +18,13 @@
    1,
    1791975216190
   ],
-  "ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00": [
-   1,
-   1791976759868
-  ],
   "2026-10-15|0|Industrial Automation and Robotics": [
    0,
    1791976732509
+  ],
+  "ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00": [
+   0,
+   1791976781844
   ]
  },
  "pins": {
