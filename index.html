@@ -134,7 +134,16 @@ body.showdone .acard.archived{display:flex}
  max-width:calc(100% - 20px);flex-wrap:wrap;justify-content:center;row-gap:6px;
  background:color-mix(in srgb,var(--bg) 78%,transparent);
  backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
- box-shadow:0 2px 12px rgba(0,0,0,.16)}
+ box-shadow:0 2px 12px rgba(0,0,0,.16);
+ transition:transform .3s cubic-bezier(.22,.9,.28,1),opacity .24s ease}
+.pager.dragging{transition:none}
+.pager.collapsed{opacity:0;pointer-events:none;transform:translateX(-50%) scale(.72)}
+.pagerdot{position:fixed;left:14px;bottom:14px;z-index:31;display:none;
+ width:42px;height:42px;padding:0;border-radius:50%;align-items:center;justify-content:center;
+ font-size:17px;line-height:1;font-weight:600;color:var(--label2);
+ background:color-mix(in srgb,var(--bg) 78%,transparent);box-shadow:0 2px 12px rgba(0,0,0,.16);
+ backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px)}
+body.pagercollapsed .pagerdot{display:flex}
 .tri{width:44px;height:34px;padding:0;border-radius:10px;background:var(--card);color:var(--blue);
  font-size:13px;line-height:1;box-shadow:var(--shadow)}
 .tri:disabled{color:var(--label3);box-shadow:none;background:transparent}
@@ -310,6 +319,7 @@ setTimeout(function(){
   <button id="sync" class="tri note" type="button" aria-label="跨设备同步设置">同步</button>
   <button id="next" class="tri" aria-label="下一周">▶</button>
 </div>
+<button id="pagerdot" class="pagerdot" type="button" title="展开按钮条" aria-label="展开按钮条">⋯</button>
 <div class="sheet" id="sheet">
   <div class="sk">
     <h2>写一句话，我放进日历</h2>
@@ -388,6 +398,16 @@ setTimeout(function(){
   var gateForm=document.getElementById("gform");
   var gatePw=document.getElementById("gpw");
   var gateMsg=document.getElementById("gmsg");
+  /* 5 分钟免验证：人在页面上（可见 / 有操作）就一直续期，离开界面超过 5 分钟才重新要密码 */
+  var IDLE_MS=5*60*1000, ACT_KEY="wode_unlock_v1";
+  function lastActive(){try{return parseInt(localStorage.getItem(ACT_KEY)||"0",10)||0;}catch(e){return 0;}}
+  function touchActivity(force){
+    try{
+      var now=Date.now();
+      if(force||now-lastActive()>10000)localStorage.setItem(ACT_KEY,String(now));
+    }catch(e){}
+  }
+  function idleFresh(){return Date.now()-lastActive()<IDLE_MS;}
   var pendingToast=null;
   function showPendingToast(){
     if(pendingToast&&typeof showToast==="function"){
@@ -396,6 +416,7 @@ setTimeout(function(){
     }
   }
   function gateOpen(animate){
+    touchActivity(true);
     var brand=document.getElementById("brand");
     if(!gateEl){document.body.classList.remove("locked");showPendingToast();return;}
     if(!animate||!brand||!gateTitle){
@@ -525,10 +546,34 @@ setTimeout(function(){
     hideAsk();
   });
   if(pkBtn)pkBtn.addEventListener("click",function(){pkUnlock(false);});
+  /* 离开界面超过 5 分钟，回来后重新上锁 */
+  function gateRelock(){
+    if(!gateEl||document.body.classList.contains("locked"))return;
+    document.body.classList.add("locked");
+    gateEl.classList.remove("gone");
+    if(gateTitle)gateTitle.style.transform="none";
+    if(gateForm)gateForm.style.opacity="1";
+    if(gateMsg)gateMsg.textContent="";
+    if(gatePw){gatePw.value="";setTimeout(function(){gatePw.focus();},60);}
+    closeSheet();closeSync();hideAsk();
+    if(pkBtn&&pkAvailable()&&pkGet()){pkBtn.hidden=false;pkBtn.textContent="用"+pkName()+"进入";}
+  }
+  window.addEventListener("pointerdown",function(){touchActivity();},{passive:true});
+  window.addEventListener("keydown",function(){touchActivity();},{passive:true});
+  window.addEventListener("wheel",function(){touchActivity();},{passive:true});
+  window.addEventListener("touchstart",function(){touchActivity();},{passive:true});
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden||document.body.classList.contains("locked"))return;
+    if(idleFresh())touchActivity(true);
+    else gateRelock();
+  });
+  setInterval(function(){
+    if(!document.hidden&&!document.body.classList.contains("locked"))touchActivity(true);
+  },30000);
   try{
-    if(!gateEl){gateOpen(false);}
+    if(gateForm)gateForm.addEventListener("submit",function(ev){ev.preventDefault();gateTry();});
+    if(!gateEl||idleFresh()){gateOpen(false);}
     else{
-      if(gateForm)gateForm.addEventListener("submit",function(ev){ev.preventDefault();gateTry();});
       if(gatePw)gatePw.focus();
       /* 每次进来都要验证：登记过指纹/面容的设备多一个按钮，没登记的就只能输密码 */
       if(pkBtn&&pkAvailable()&&pkGet()){
@@ -642,6 +687,47 @@ setTimeout(function(){
   prevBtn.addEventListener("click",function(){goTo(idx-1);});
   nextBtn.addEventListener("click",function(){goTo(idx+1);});
   if(homeBtn)homeBtn.addEventListener("click",function(){goTo(homeIdx());});
+
+  /* ---- 按钮条：按住往左拖能收成左下角的小圆，点小圆恢复 ---- */
+  var pagerEl=document.querySelector(".pager");
+  var pagerDot=document.getElementById("pagerdot");
+  var PAGER_KEY="wode_pager_collapsed_v1";
+  function setPagerCollapsed(on,save){
+    document.body.classList.toggle("pagercollapsed",on);
+    if(pagerEl)pagerEl.classList.toggle("collapsed",on);
+    if(save&&store){try{on?store.setItem(PAGER_KEY,"1"):store.removeItem(PAGER_KEY);}catch(e){}}
+  }
+  try{if(store&&store.getItem(PAGER_KEY)==="1")setPagerCollapsed(true,false);}catch(e){}
+  if(pagerDot)pagerDot.addEventListener("click",function(){setPagerCollapsed(false,true);});
+  if(pagerEl){
+    var pdrag=null,pdx=0,pmoved=false;
+    pagerEl.addEventListener("pointerdown",function(ev){
+      if(ev.button!==undefined&&ev.button!==0)return;
+      pdrag=ev.clientX;pdx=0;pmoved=false;
+      pagerEl.classList.add("dragging");
+    });
+    pagerEl.addEventListener("pointermove",function(ev){
+      if(pdrag===null)return;
+      var dx=ev.clientX-pdrag;
+      if(!pmoved&&Math.abs(dx)<6)return;
+      pmoved=true;
+      pdx=dx>0?dx*0.35:dx;              /* 往右拉给点阻尼 */
+      pagerEl.style.transform="translateX(calc(-50% + "+pdx+"px))";
+    });
+    function endPagerDrag(){
+      if(pdrag===null)return;
+      pdrag=null;
+      pagerEl.classList.remove("dragging");
+      pagerEl.style.transform="";
+      if(pmoved&&pdx<-60)setPagerCollapsed(true,true);
+      setTimeout(function(){pmoved=false;},0);
+    }
+    pagerEl.addEventListener("pointerup",endPagerDrag);
+    pagerEl.addEventListener("pointercancel",endPagerDrag);
+    pagerEl.addEventListener("pointerleave",function(){if(pdrag!==null&&pmoved)endPagerDrag();});
+    /* 拖过之后那一下别当成点击（免得松手时误触按钮） */
+    pagerEl.addEventListener("click",function(ev){if(pmoved){ev.preventDefault();ev.stopPropagation();}},true);
+  }
 
   /* 一次滚轮/方向键 = 平滑滑到上一周或下一周 */
   var lock=false;
