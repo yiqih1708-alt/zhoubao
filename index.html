@@ -1241,6 +1241,21 @@ setTimeout(function(){
   function saveStamps(){try{localStorage.setItem(STAMP_KEY,JSON.stringify(stamps));}catch(e){}}
   function ghToken(){try{return localStorage.getItem(TOKEN_KEY)||"";}catch(e){return "";}}
   function syncOn(){return useLocal||!!ghToken();}
+  /* 旧方案用过「日期|序号|课程」这种 id，序号会随新条目后移 → 直接清掉，别再污染同步文件 */
+  function isLegacyId(id){
+    var p=(id||"").split("|");
+    return p.length===3&&/^\d{4}-\d{2}-\d{2}$/.test(p[0])&&/^\d+$/.test(p[1]);
+  }
+  function purgeLegacy(map,st){
+    var changed=false;
+    Object.keys(map||{}).forEach(function(id){
+      if(isLegacyId(id)){delete map[id];if(st)delete st[id];changed=true;}
+    });
+    return changed;
+  }
+  if(purgeLegacy(state,stamps.done)||purgeLegacy(pins,stamps.pins)||purgeLegacy(restored,stamps.restored)){
+    save();savePins();saveRestored();saveStamps();
+  }
   function markDirty(store,id){
     try{stamps[store][id]=Date.now();saveStamps();}catch(e){}
     schedulePush();
