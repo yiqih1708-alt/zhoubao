@@ -778,14 +778,20 @@ setTimeout(function(){
         /* 抓指针：抓早了会把按钮的点击也吃掉 */
         try{pagerEl.setPointerCapture(pg0.id);}catch(e){}
       }
-      /* 位移严格跟手（往右给点阻尼），缩小量按「拖到左下角」算，所以两者到角落刚好同时完成 */
-      var left=pg0.left+(dx>0?dx*0.35:dx);
-      if(left<DOT_LEFT)left=DOT_LEFT;
-      var p=Math.max(0,Math.min(1,(pg0.left-left)/pg0.span));
+      /* 缩小量按滑动距离算；位置锚在「你抓住的那个点」上，让它一直在鼠标底下 */
+      var p=Math.max(0,Math.min(1,(-dx)/pg0.span));
       pp=p;
+      var bw=pg0.w+(DOT_W-pg0.w)*p;
+      var bh=pg0.h+(DOT_W-pg0.h)*p;
+      var left;
+      if(dx>0){
+        left=pg0.left+dx*0.35;                     /* 往右给阻尼，基本不动 */
+      }else{
+        left=ev.clientX-(pg0.x-pg0.left)*(bw/pg0.w);
+      }
       pagerEl.style.left=left+"px";
-      pagerEl.style.width=(pg0.w+(DOT_W-pg0.w)*p)+"px";
-      pagerEl.style.height=(pg0.h+(DOT_W-pg0.h)*p)+"px";
+      pagerEl.style.width=bw+"px";
+      pagerEl.style.height=bh+"px";
       kidsOpacity(1-p);
       if(pagerDot)pagerDot.style.opacity=String(p>0.75?(p-0.75)/0.25:0);
     });
