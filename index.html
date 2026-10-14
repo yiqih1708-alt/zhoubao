@@ -693,7 +693,7 @@ setTimeout(function(){
   var pagerEl=document.querySelector(".pager");
   var pagerDot=document.getElementById("pagerdot");
   var PAGER_KEY="wode_pager_collapsed_v1";
-  var DOT_W=42, DOT_LEFT=14, MORPH_PX=220;
+  var DOT_W=42, DOT_LEFT=14;
   var pagerSize=null;
   function pagerKids(){return pagerEl?[].slice.call(pagerEl.children):[];}
   function kidsOpacity(v){pagerKids().forEach(function(k){k.style.opacity=v;});}
@@ -756,7 +756,8 @@ setTimeout(function(){
       var r=pagerEl.getBoundingClientRect();
       if(!r.width)return;
       pagerSize={w:r.width,h:r.height};
-      pg0={left:r.left,w:r.width,h:r.height,x:ev.clientX};
+      pg0={left:r.left,w:r.width,h:r.height,x:ev.clientX,id:ev.pointerId,
+           span:Math.max(120,r.left-DOT_LEFT)};
       pmoved=false;pp=0;
       pagerEl.classList.add("dragging");
       pagerEl.style.left=r.left+"px";
@@ -765,17 +766,22 @@ setTimeout(function(){
       pagerEl.style.height=r.height+"px";
       pagerEl.style.overflow="hidden";
       if(pagerDot)pagerDot.style.opacity="0";
-      /* 拖动过程中按钮条自己在缩小左移，要抓指针，否则松手的 pointerup 收不到 */
-      try{pagerEl.setPointerCapture(ev.pointerId);}catch(e){}
     });
     pagerEl.addEventListener("pointermove",function(ev){
       if(!pg0)return;
       var dx=ev.clientX-pg0.x;
-      if(!pmoved&&Math.abs(dx)<6)return;
-      pmoved=true;
-      var p=Math.max(0,Math.min(1,(-dx)/MORPH_PX));
+      if(!pmoved){
+        if(Math.abs(dx)<6)return;
+        pmoved=true;
+        /* 真的开始拖了才抓指针：抓早了会把按钮的点击也吃掉 */
+        try{pagerEl.setPointerCapture(pg0.id);}catch(e){}
+      }
+      /* 位移严格跟手（往右给点阻尼），缩小量按「拖到左下角」算，所以两者到角落刚好同时完成 */
+      var left=pg0.left+(dx>0?dx*0.35:dx);
+      if(left<DOT_LEFT)left=DOT_LEFT;
+      var p=Math.max(0,Math.min(1,(pg0.left-left)/pg0.span));
       pp=p;
-      pagerEl.style.left=(pg0.left+(DOT_LEFT-pg0.left)*p)+"px";
+      pagerEl.style.left=left+"px";
       pagerEl.style.width=(pg0.w+(DOT_W-pg0.w)*p)+"px";
       pagerEl.style.height=(pg0.h+(DOT_W-pg0.h)*p)+"px";
       kidsOpacity(1-p);
@@ -784,13 +790,22 @@ setTimeout(function(){
     function endPagerDrag(){
       if(!pg0)return;
       var p=pp,moved=pmoved,sz=pagerSize;
+      try{pagerEl.releasePointerCapture(pg0.id);}catch(e){}
       pg0=null;pmoved=false;pp=0;
       if(moved&&p>=0.85){
-        /* 已经缩到小圆那边了，交接看不出跳变 */
-        if(pagerDot)pagerDot.style.opacity="";
-        setPagerCollapsed(true,true);
-        kidsOpacity("");
-        clearPagerInline();
+        /* 收尾：吸到小圆上（很短，像被吸过去） */
+        pagerEl.style.transition="left .16s ease-out,width .16s ease-out,height .16s ease-out";
+        pagerEl.style.left=DOT_LEFT+"px";
+        pagerEl.style.width=DOT_W+"px";
+        pagerEl.style.height=DOT_W+"px";
+        kidsOpacity(0);
+        if(pagerDot)pagerDot.style.opacity="1";
+        setTimeout(function(){
+          setPagerCollapsed(true,true);
+          if(pagerDot)pagerDot.style.opacity="";
+          kidsOpacity("");
+          clearPagerInline();
+        },170);
         return;
       }
       /* 没拖够：慢慢弹回长条 */
@@ -808,7 +823,7 @@ setTimeout(function(){
     pagerEl.addEventListener("pointercancel",endPagerDrag);
     window.addEventListener("pointerup",endPagerDrag);
     /* 拖过之后那一下别当成点击（免得松手时误触按钮） */
-    pagerEl.addEventListener("click",function(ev){if(pmoved||pp>0.05){ev.preventDefault();ev.stopPropagation();}},true);
+    pagerEl.addEventListener("click",function(ev){if(pmoved){ev.preventDefault();ev.stopPropagation();}},true);
   }
 
   /* 一次滚轮/方向键 = 平滑滑到上一周或下一周 */
