@@ -207,6 +207,20 @@ body.unlocking #brand{visibility:hidden}
  color:var(--label);outline:none;box-shadow:var(--shadow)}
 .gpw:focus{border-color:var(--blue)}
 .gmsg{margin:0;height:14px;font-size:11.5px;color:var(--label3)}
+.gpk{background:transparent;box-shadow:none;color:var(--blue);font-size:12.5px;font-weight:500;
+ padding:4px 8px}
+.gpk:active{transform:scale(.97)}
+/* 解锁后问一句要不要给这台设备加指纹/面容 */
+.ask{position:fixed;left:50%;top:78px;z-index:65;transform:translate(-50%,-10px);
+ width:min(560px,calc(100% - 32px));padding:10px 12px;border-radius:14px;display:none;
+ background:color-mix(in srgb,var(--card) 94%,transparent);
+ backdrop-filter:saturate(180%) blur(18px);-webkit-backdrop-filter:saturate(180%) blur(18px);
+ box-shadow:0 12px 36px rgba(0,0,0,.16),inset 0 0 0 .5px var(--sep);
+ transition:opacity .3s ease,transform .38s cubic-bezier(.22,.9,.28,1)}
+.ask.show{display:flex;align-items:center;gap:8px;opacity:1;transform:translate(-50%,0)}
+.ask .ak{flex:1 1 auto;font-size:12px;color:var(--label2)}
+.ask button{font-size:12px;padding:6px 12px}
+.ask .yes{background:var(--blue);color:#fff;box-shadow:none;font-weight:600}
 .gate.shake .gtitle{animation:gshake .44s cubic-bezier(.36,.07,.19,.97)}
 @keyframes gshake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
  30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
@@ -223,7 +237,13 @@ button.primary .ck{font-weight:700;font-size:14px;line-height:1}
     <input class="gpw" id="gpw" type="password" inputmode="numeric" autocomplete="off"
            spellcheck="false" placeholder="密码" aria-label="密码">
     <p class="gmsg" id="gmsg"></p>
+    <button class="gpk" id="gpk" type="button" hidden>用指纹 / 面容进入</button>
   </form>
+</div>
+<div class="ask" id="ask">
+  <span class="ak" id="asktext"></span>
+  <button class="yes" id="askyes" type="button">加上</button>
+  <button id="askno" type="button">以后再说</button>
 </div>
 <script>
 /* 兜底：万一主脚本出错，6 秒后自动放行，别把人锁在外面 */
@@ -388,11 +408,105 @@ setTimeout(function(){
     if(!pw){if(gateMsg)gateMsg.textContent="请输入密码";return;}
     var ok=false;
     try{ok=gateKey(pw)===GATE_HASH;}catch(e){ok=false;}
-    if(ok){gateOpen(true);return;}
+    if(ok){gateOpen(true);setTimeout(maybeAskPasskey,1500);return;}
     if(gateMsg)gateMsg.textContent="密码不对";
     if(gateEl)gateEl.classList.add("shake");
     if(gatePw){gatePw.value="";gatePw.focus();}
     setTimeout(function(){if(gateEl)gateEl.classList.remove("shake");},470);
+  }
+  /* ---- 指纹 / 面容（WebAuthn）：任何设备第一次进来都必须先输密码，之后才能在这台设备上登记通行密钥 ---- */
+  var PK_KEY="wode_passkey_v1", PK_ASK="wode_passkey_ask_v1";
+  var askEl=document.getElementById("ask");
+  var askText=document.getElementById("asktext");
+  var askYes=document.getElementById("askyes");
+  var askNo=document.getElementById("askno");
+  var pkBtn=document.getElementById("gpk");
+  function pkGet(){try{return JSON.parse(localStorage.getItem(PK_KEY)||"null");}catch(e){return null;}}
+  function pkSet(v){try{if(v)localStorage.setItem(PK_KEY,JSON.stringify(v));else localStorage.removeItem(PK_KEY);}catch(e){}}
+  function pkAvailable(){
+    try{return !!(window.PublicKeyCredential&&navigator.credentials&&window.isSecureContext);}catch(e){return false;}
+  }
+  function pkName(){
+    var ua=navigator.userAgent||"";
+    if(/iPhone|iPad|iPod|Macintosh/.test(ua))return "Face ID";
+    if(/Windows/.test(ua))return "Windows Hello";
+    return "指纹 / 面容";
+  }
+  function pkB64(buf){
+    var s="",b=new Uint8Array(buf),i;
+    for(i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);
+    return btoa(s);
+  }
+  function pkRaw(str){
+    var s=atob(str),b=new Uint8Array(s.length),i;
+    for(i=0;i<s.length;i++)b[i]=s.charCodeAt(i);
+    return b;
+  }
+  function pkRand(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return a;}
+  function hideAsk(){
+    if(askEl)askEl.classList.remove("show");
+  }
+  function showAsk(text,withButtons){
+    if(!askEl)return;
+    if(askText)askText.textContent=text;
+    if(askYes)askYes.hidden=!withButtons;
+    if(askNo)askNo.hidden=!withButtons;
+    askEl.classList.add("show");
+  }
+  function maybeAskPasskey(){
+    if(!askEl||!pkAvailable()||pkGet())return;
+    var declined=0;
+    try{declined=parseInt(localStorage.getItem(PK_ASK)||"0",10)||0;}catch(e){}
+    if(declined&&(Date.now()-declined)<30*86400000)return;
+    showAsk("要不要给这台设备加上"+pkName()+"？以后进页面刷一下就行",true);
+  }
+  function pkRegister(){
+    if(!pkAvailable()){hideAsk();return;}
+    hideAsk();
+    var uid=pkRand(16);
+    navigator.credentials.create({publicKey:{
+      challenge:pkRand(32),
+      rp:{name:"周报"},
+      user:{id:uid,name:"zhoubao",displayName:"周报"},
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:"platform",
+        userVerification:"required",residentKey:"preferred"},
+      timeout:60000,attestation:"none"
+    }}).then(function(cred){
+      if(!cred)throw new Error("cancelled");
+      pkSet({id:pkB64(cred.rawId),ts:Date.now()});
+      showAsk("好了，以后可以用"+pkName()+"进页面",false);
+      setTimeout(hideAsk,3500);
+    }).catch(function(err){
+      showAsk("没加上（"+((err&&err.name)||"失败")+"），继续用密码",false);
+      setTimeout(hideAsk,3500);
+    });
+  }
+  function pkUnlock(){
+    var rec=pkGet();
+    if(!rec){if(gateMsg)gateMsg.textContent="这台设备还没登记，先输密码";return;}
+    if(!pkAvailable()){if(gateMsg)gateMsg.textContent="这个浏览器不支持，先输密码";return;}
+    if(gateMsg)gateMsg.textContent="";
+    navigator.credentials.get({publicKey:{
+      challenge:pkRand(32),
+      allowCredentials:[{type:"public-key",id:pkRaw(rec.id)}],
+      userVerification:"required",timeout:60000
+    }}).then(function(res){
+      if(res)gateOpen(true);
+      else throw new Error("cancelled");
+    }).catch(function(err){
+      if(gateMsg)gateMsg.textContent="没通过验证（"+((err&&err.name)||"取消")+"）";
+    });
+  }
+  if(askYes)askYes.addEventListener("click",pkRegister);
+  if(askNo)askNo.addEventListener("click",function(){
+    try{localStorage.setItem(PK_ASK,String(Date.now()));}catch(e){}
+    hideAsk();
+  });
+  if(pkBtn)pkBtn.addEventListener("click",pkUnlock);
+  if(pkBtn&&pkAvailable()&&pkGet()){
+    pkBtn.hidden=false;
+    pkBtn.textContent="用"+pkName()+"进入";
   }
   try{
     var remembered=false;
