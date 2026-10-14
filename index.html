@@ -742,6 +742,7 @@ button.primary .ck{font-weight:700;font-size:14px;line-height:1}
     postInbox(t).then(function(){
       setSt("已交给 Codex，刷新一下就能在日历里看到",true);
       sktx.value="";skgh.classList.remove("show");
+      if(writeBtn)writeBtn.classList.add("has");   /* 记上「还有没处理的留言」 */
       setTimeout(closeSheet,1500);
     }).catch(function(){
       inboxQ.push({text:t,ts:new Date().toISOString()});saveQueue();
