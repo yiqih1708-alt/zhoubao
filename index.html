@@ -140,6 +140,24 @@ body.showdone .acard.archived{display:flex}
 .weeklabel{font-size:13px;font-weight:600;color:var(--label2);min-width:190px;text-align:center;
  font-variant-numeric:tabular-nums}
 .tri.home{width:auto;min-width:54px;padding:0 11px;font-size:12px}
+.tri.note{width:auto;min-width:44px;padding:0 10px;font-size:12px}
+.tri.note.has{box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 45%,transparent)}
+/* 写一句话交给 Codex 的弹出框 */
+.sheet{position:fixed;inset:0;z-index:70;display:none;background:rgba(0,0,0,.3)}
+.sheet.show{display:flex;align-items:center;justify-content:center;padding:16px}
+.sheet .sk{width:min(560px,100%);background:var(--card);border-radius:18px;padding:15px 15px 13px;
+ box-shadow:0 22px 60px rgba(0,0,0,.32);display:flex;flex-direction:column;gap:10px}
+.sheet h2{margin:0;font-size:15px;font-weight:600}
+.sheet .hint{font-size:11.5px;color:var(--label3);margin-top:-4px}
+.sheet textarea{min-height:104px;resize:vertical;font:inherit;font-size:13.5px;line-height:1.5;
+ color:var(--label);background:color-mix(in srgb,var(--label) 5%,transparent);
+ border:.5px solid var(--sep);border-radius:12px;padding:10px 11px;outline:none}
+.sheet .skrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sheet .skst{flex:1 1 180px;font-size:11.5px;color:var(--label2)}
+.sheet button{font-size:13px;padding:7px 14px}
+.sheet .gh{display:none;background:var(--blue);color:#fff;box-shadow:none}
+.sheet .gh.show{display:inline-flex}
+.sheet .ok{background:var(--blue);color:#fff;box-shadow:none;font-weight:600}
 .chip.past{opacity:.85}
 .chip.past .ct{color:var(--label2)}
 .chip.past .cm{color:var(--label3)}
@@ -210,7 +228,21 @@ button.primary .ck{font-weight:700;font-size:14px;line-height:1}
   <button id="prev" class="tri" aria-label="上一周">◀</button>
   <button id="home" class="tri home" type="button" aria-label="回到本周">本周</button>
   <span class="weeklabel" id="weeklabel"></span>
+  <button id="write" class="tri note" type="button" aria-label="写一句话，让 Codex 放进日历">写</button>
   <button id="next" class="tri" aria-label="下一周">▶</button>
+</div>
+<div class="sheet" id="sheet">
+  <div class="sk">
+    <h2>写一句话，我放进日历</h2>
+    <div class="hint">写清楚哪天、几点、要做什么就行，课程名我会补全</div>
+    <textarea id="sktx" placeholder="例如：下周三下午交 Research and Professional Skills 的作业&#10;周五 10:00 去图书馆还书"></textarea>
+    <div class="skrow">
+      <span class="skst" id="skst"></span>
+      <button class="gh" id="skgh" type="button">打开 GitHub 收件箱</button>
+      <button id="skno" type="button">取消</button>
+      <button class="ok" id="skok" type="button">完成</button>
+    </div>
+  </div>
 </div>
 </div>
 <script>
@@ -648,6 +680,83 @@ button.primary .ck{font-weight:700;font-size:14px;line-height:1}
     var realRows=toastRows.filter(function(r){return r.cls!=="test";});
     showToast(toastRows,realRows.length?"上次打开之后有 "+realRows.length+" 条新内容":"新内容提示（测试）");
   }
+
+  /* ---- 翻周条上的「写」：写一句话交给 Codex；本机服务连不上就转 GitHub 收件箱 ---- */
+  var API="http://127.0.0.1:8765/api/inbox";
+  var ISSUE="https://github.com/yiqih1708-alt/zhoubao/issues/new";
+  var QKEY="wode_inbox_queue_v1";
+  var writeBtn=document.getElementById("write");
+  var sheet=document.getElementById("sheet");
+  var sktx=document.getElementById("sktx");
+  var skst=document.getElementById("skst");
+  var skgh=document.getElementById("skgh");
+  var skok=document.getElementById("skok");
+  var skno=document.getElementById("skno");
+  var inboxQ=[];
+  if(store){try{inboxQ=JSON.parse(store.getItem(QKEY)||"[]")||[];}catch(e){inboxQ=[];}}
+  function saveQueue(){if(store){try{store.setItem(QKEY,JSON.stringify(inboxQ));}catch(e){}}}
+  function setSt(t,ok){if(!skst)return;skst.textContent=t||"";skst.style.color=ok?"#34C759":"";}
+  function openSheet(){
+    if(!sheet)return;
+    sheet.classList.add("show");
+    setSt("");skgh.classList.remove("show");
+    if(sktx)sktx.focus();
+  }
+  function closeSheet(){if(sheet)sheet.classList.remove("show");}
+  function issueUrl(text){
+    var title="收件箱 "+new Date().toLocaleString("zh-CN",{hour12:false});
+    return ISSUE+"?title="+encodeURIComponent(title)+"&body="+encodeURIComponent(text+"\n\n<!-- codex-inbox -->");
+  }
+  function postInbox(text){
+    return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:text,from:"page"})})
+      .then(function(r){return r.json();})
+      .then(function(j){if(!j||!j.ok)throw new Error("server said no");return true;});
+  }
+  function flushQueue(){
+    if(!inboxQ.length)return;
+    postInbox(inboxQ[0].text).then(function(){
+      inboxQ.shift();saveQueue();flushQueue();
+    }).catch(function(){if(writeBtn)writeBtn.classList.add("has");});
+  }
+  function refreshBadge(){
+    if(!writeBtn||!store||!navigator.onLine)return;
+    fetch(API,{cache:"no-store"}).then(function(r){return r.json();})
+      .then(function(j){if(j&&j.ok)writeBtn.classList.toggle("has",j.count>0);})
+      .catch(function(){});
+  }
+  if(writeBtn)writeBtn.addEventListener("click",openSheet);
+  if(skno)skno.addEventListener("click",closeSheet);
+  if(sheet)sheet.addEventListener("click",function(ev){if(ev.target===sheet)closeSheet();});
+  window.addEventListener("keydown",function(ev){
+    if(ev.key==="Escape"&&sheet&&sheet.classList.contains("show"))closeSheet();
+  });
+  if(skgh)skgh.addEventListener("click",function(){
+    var t=(sktx&&sktx.value||"").trim();
+    if(t)window.open(issueUrl(t),"_blank");
+  });
+  if(skok)skok.addEventListener("click",function(){
+    var t=(sktx&&sktx.value||"").trim();
+    if(!t){setSt("先写点什么");return;}
+    setSt("提交中…");
+    postInbox(t).then(function(){
+      setSt("已交给 Codex，刷新一下就能在日历里看到",true);
+      sktx.value="";skgh.classList.remove("show");
+      setTimeout(closeSheet,1500);
+    }).catch(function(){
+      inboxQ.push({text:t,ts:new Date().toISOString()});saveQueue();
+      copyText(t);
+      setSt("本机服务连不上：已存下并复制到剪贴板，点右边按钮打开 GitHub 收件箱");
+      skgh.classList.add("show");
+      if(writeBtn)writeBtn.classList.add("has");
+      try{window.open(issueUrl(t),"_blank");}catch(e){}
+    });
+  });
+  if(sktx)sktx.addEventListener("keydown",function(ev){
+    if((ev.ctrlKey||ev.metaKey)&&ev.key==="Enter"){ev.preventDefault();if(skok)skok.click();}
+  });
+  refreshBadge();
+  flushQueue();
 
 })();
 </script>
