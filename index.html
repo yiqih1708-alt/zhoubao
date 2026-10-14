@@ -158,6 +158,7 @@ body.showdone .acard.archived{display:flex}
 .sheet .gh{display:none;background:var(--blue);color:#fff;box-shadow:none}
 .sheet .gh.show{display:inline-flex}
 .sheet .ok{background:var(--blue);color:#fff;box-shadow:none;font-weight:600}
+.sheet .tk{width:100%;letter-spacing:0;text-align:left;font-size:12.5px;padding:9px 11px}
 .chip.past{opacity:.85}
 .chip.past .ct{color:var(--label2)}
 .chip.past .cm{color:var(--label3)}
@@ -240,6 +241,19 @@ button.primary .ck{font-weight:700;font-size:14px;line-height:1}
     <button class="gpk" id="gpk" type="button" hidden>用指纹 / 面容进入</button>
   </form>
 </div>
+<div class="sheet" id="ssheet">
+  <div class="sk">
+    <h2>跨设备同步</h2>
+    <div class="hint" id="sshint"></div>
+    <input class="gpw tk" id="sstk" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 GitHub token（每台设备粘一次）">
+    <div class="skrow">
+      <span class="skst" id="ssst"></span>
+      <button id="ssclear" type="button">清除</button>
+      <button id="ssclose" type="button">关闭</button>
+      <button class="ok" id="sssave" type="button">保存并同步</button>
+    </div>
+  </div>
+</div>
 <div class="ask" id="ask">
   <span class="ak" id="asktext"></span>
   <button class="yes" id="askyes" type="button">加上</button>
@@ -286,6 +300,7 @@ setTimeout(function(){
   <button id="home" class="tri home" type="button" aria-label="回到本周">本周</button>
   <span class="weeklabel" id="weeklabel"></span>
   <button id="write" class="tri note" type="button" aria-label="写一句话，让 Codex 放进日历">写</button>
+  <button id="sync" class="tri note" type="button" aria-label="跨设备同步设置">同步</button>
   <button id="next" class="tri" aria-label="下一周">▶</button>
 </div>
 <div class="sheet" id="sheet">
@@ -694,6 +709,7 @@ setTimeout(function(){
       c.classList.toggle("done",box.checked);
       layout(c.parentNode,true);
       save();
+      markDirty("done",id);
     });
   });
 
@@ -792,6 +808,8 @@ setTimeout(function(){
     card.classList.remove("done","archived");
     applyPins();
     if(annBox)layout(annBox,true);
+    markDirty("restored",id);
+    markDirty("done",id);
   }
   [].slice.call(document.querySelectorAll(".pinitem")).forEach(function(b){
     b.addEventListener("click",function(ev){
@@ -801,34 +819,15 @@ setTimeout(function(){
       if(pins[id])delete pins[id];
       else pins[id]=Date.now();
       savePins();applyPins();
+      markDirty("pins",id);
       if(annBox)layout(annBox,true);
     });
   });
   applyPins();
   var annBox=document.getElementById("annlist");
   if(annBox)layout(annBox,false);
-  /* 恢复期内的公告留在主列表；已过期的重新收进「已完成」 */
-  [].slice.call(document.querySelectorAll(".acard")).forEach(function(c){
-    var until=restored[c.dataset.id];
-    if(until===undefined)return;
-    if(until>Date.now()){c.classList.add("restored");c.title="恢复中，3 天后自动回到「已完成」";}
-    else{delete restored[c.dataset.id];c.classList.add("archived");}
-  });
-  saveRestored();
-  /* 已勾选的公告：这次打开就收进「已完成」，不在主列表里显示 */
-  [].slice.call(document.querySelectorAll(".acard.done")).forEach(function(c){
-    c.classList.add("archived");
-  });
-  /* 发布超过 7 天的公告也自动收进「已完成」 */
-  var today=new Date();today.setHours(0,0,0,0);
-  [].slice.call(document.querySelectorAll(".acard[data-posted]")).forEach(function(c){
-    if(restored[c.dataset.id])return;   /* 恢复期内的不受 7 天规则影响 */
-    var p=c.dataset.posted;
-    if(!p)return;
-    var d=new Date(p+"T00:00:00");
-    if(isNaN(d.getTime()))return;
-    if((today-d)/86400000>7)c.classList.add("archived");
-  });
+  /* 已勾选 / 恢复期内 / 发布超过 7 天 → 收进「已完成」（幂等，跨设备合并后要能重算） */
+  applyArchivePass();
 
   /* ---- 新消息：刷新后新出现的公告，先在最顶端停 30 秒（带蓝色填充），再回到重要性排序位置 ---- */
   var SKEY="wode_seen_ann_v1";
@@ -1032,6 +1031,199 @@ setTimeout(function(){
   });
   refreshBadge();
   flushQueue();
+
+  /* ---- 跨设备同步：把勾选 / 置顶 / 恢复状态存进仓库里的 state.json ---- */
+  var SYNC={owner:"yiqih1708-alt",repo:"zhoubao",path:"state.json",branch:"main"};
+  var TOKEN_KEY="wode_gh_token_v1", STAMP_KEY="wode_sync_stamp_v1";
+  var LOCAL_EP="http://127.0.0.1:8765/api/state";
+  var useLocal=false;
+  try{useLocal=location.search.indexOf("sync=local")>=0;}catch(e){}
+  var stamps={done:{},pins:{},restored:{}};
+  try{var st0=JSON.parse(localStorage.getItem(STAMP_KEY)||"null");if(st0&&st0.done)stamps=st0;}catch(e){}
+  function saveStamps(){try{localStorage.setItem(STAMP_KEY,JSON.stringify(stamps));}catch(e){}}
+  function ghToken(){try{return localStorage.getItem(TOKEN_KEY)||"";}catch(e){return "";}}
+  function syncOn(){return useLocal||!!ghToken();}
+  function markDirty(store,id){
+    try{stamps[store][id]=Date.now();saveStamps();}catch(e){}
+    schedulePush();
+  }
+  function packStore(map,st){
+    var out={};
+    Object.keys(map).forEach(function(id){out[id]=[map[id],st[id]||0];});
+    Object.keys(st||{}).forEach(function(id){if(out[id]===undefined)out[id]=[0,st[id]];});
+    return out;
+  }
+  /* 逐条按时间戳合并：谁改得晚听谁的（0 表示被取消） */
+  function mergeStore(map,st,remote){
+    var changed=false;
+    Object.keys(remote||{}).forEach(function(id){
+      var pair=remote[id]||[0,0];
+      var rv=pair[0],rt=pair[1]||0,lt=st[id]||0;
+      var known=(map[id]!==undefined)||(st[id]!==undefined);
+      /* 本地有自己的记录、且不比远端旧 → 用本地的；本地完全没见过这条 → 直接采纳远端 */
+      if(rt<=lt&&known)return;
+      st[id]=rt;
+      if(!rv){if(map[id]!==undefined){delete map[id];changed=true;}}
+      else if(map[id]!==rv){map[id]=rv;changed=true;}
+    });
+    return changed;
+  }
+  function syncDoc(){
+    return {v:1,ts:new Date().toISOString(),
+      done:packStore(state,stamps.done),
+      pins:packStore(pins,stamps.pins),
+      restored:packStore(restored,stamps.restored)};
+  }
+  function b64e(s){return btoa(unescape(encodeURIComponent(s)));}
+  function b64d(s){return decodeURIComponent(escape(atob(s)));}
+  function ghHeaders(){
+    var h={"Accept":"application/vnd.github+json"};
+    var t=ghToken();
+    if(t)h.Authorization="Bearer "+t;
+    return h;
+  }
+  function stateGet(){
+    if(useLocal){
+      return fetch(LOCAL_EP,{cache:"no-store"})
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(j){return j&&Object.keys(j).length?{doc:j,sha:""}:null;})
+        .catch(function(){return null;});
+    }
+    return fetch("https://api.github.com/repos/"+SYNC.owner+"/"+SYNC.repo+"/contents/"+SYNC.path+
+                 "?ref="+SYNC.branch,{headers:ghHeaders(),cache:"no-store"})
+      .then(function(r){
+        if(r.status===404)return null;
+        if(!r.ok)throw new Error("读 "+r.status);
+        return r.json();
+      })
+      .then(function(j){
+        if(!j)return null;
+        var doc={};
+        try{doc=JSON.parse(b64d(String(j.content||"").replace(/\n/g,"")))||{};}catch(e){doc={};}
+        return {doc:doc,sha:j.sha};
+      });
+  }
+  function statePut(doc,sha){
+    var text=JSON.stringify(doc,null,1);
+    if(useLocal){
+      return fetch(LOCAL_EP,{method:"PUT",headers:{"Content-Type":"application/json"},body:text})
+        .then(function(r){if(!r.ok)throw new Error("写 "+r.status);return true;});
+    }
+    var body={message:"state "+doc.ts,content:b64e(text),branch:SYNC.branch};
+    if(sha)body.sha=sha;
+    return fetch("https://api.github.com/repos/"+SYNC.owner+"/"+SYNC.repo+"/contents/"+SYNC.path,
+      {method:"PUT",headers:Object.assign({"Content-Type":"application/json"},ghHeaders()),
+       body:JSON.stringify(body)})
+      .then(function(r){
+        if(r.ok)return true;
+        if(r.status===401||r.status===403)throw new Error("token 无效或没权限（"+r.status+"）");
+        if(r.status===409||r.status===422)throw new Error("刚好和别人撞上，下次会自动合并");
+        throw new Error("写 "+r.status);
+      });
+  }
+  var syncState={when:"",err:"",busy:false};
+  var syncBtn=document.getElementById("sync");
+  var ssheet=document.getElementById("ssheet");
+  var ssHint=document.getElementById("sshint");
+  var ssSt=document.getElementById("ssst");
+  var ssTk=document.getElementById("sstk");
+  var ssSave=document.getElementById("sssave");
+  var ssClear=document.getElementById("ssclear");
+  var ssClose=document.getElementById("ssclose");
+  function renderSyncStatus(){
+    if(ssSt){
+      ssSt.textContent=syncState.busy?"同步中…":
+        (syncState.err?syncState.err:(syncState.when?"上次同步 "+syncState.when:"还没同步过"));
+      ssSt.style.color=syncState.err?"#FF3B30":"";
+    }
+    if(ssHint)ssHint.textContent=useLocal?"测试模式：用本机服务当仓库":
+      (ghToken()?"已在这台设备配好 token。刚在别的设备改的勾选，打开或刷新页面时会自动合并。":
+       "① 打开 github.com/settings/personal-access-tokens/new ② Repository access 选 Only select repositories，只勾 zhoubao ③ Permissions → Contents 改成 Read and write ④ Generate 后把 token 粘到下面（每台设备粘一次，不会写进网页）");
+    if(ssClear)ssClear.hidden=!ghToken()&&!useLocal;
+    if(syncBtn)syncBtn.classList.toggle("has",(!ghToken()&&!useLocal)||!!syncState.err);
+  }
+  function syncNow(){
+    if(!syncOn())return Promise.resolve(false);
+    syncState.busy=true;syncState.err="";renderSyncStatus();
+    return stateGet().then(function(rem){
+      var changed=false,sha=rem?rem.sha:"";
+      if(rem&&rem.doc){
+        changed=mergeStore(state,stamps.done,rem.doc.done)||changed;
+        changed=mergeStore(pins,stamps.pins,rem.doc.pins)||changed;
+        changed=mergeStore(restored,stamps.restored,rem.doc.restored)||changed;
+      }
+      if(changed){
+        save();savePins();saveRestored();saveStamps();
+        applyAll(false);applyPins();applyArchivePass();
+        if(annBox)layout(annBox,true);
+      }
+      var mine=syncDoc();
+      var same=!!(rem&&rem.doc)&&
+        JSON.stringify(rem.doc.done||{})===JSON.stringify(mine.done)&&
+        JSON.stringify(rem.doc.pins||{})===JSON.stringify(mine.pins)&&
+        JSON.stringify(rem.doc.restored||{})===JSON.stringify(mine.restored);
+      if(same)return false;
+      return statePut(mine,sha).then(function(){return true;});
+    }).then(function(pushed){
+      syncState.busy=false;syncState.err="";
+      syncState.when=new Date().toLocaleTimeString("zh-CN",{hour12:false})+(pushed?"（已上传）":"（已是最新）");
+      renderSyncStatus();
+      return pushed;
+    }).catch(function(err){
+      syncState.busy=false;
+      syncState.err=String((err&&err.message)||err).slice(0,60);
+      renderSyncStatus();
+      return false;
+    });
+  }
+  var pushTimer=null;
+  function schedulePush(){
+    if(!syncOn())return;
+    if(pushTimer)clearTimeout(pushTimer);
+    pushTimer=setTimeout(function(){pushTimer=null;syncNow();},2000);
+  }
+  /* 已完成公告的归档规则：幂等，合并后能整体重算 */
+  function applyArchivePass(){
+    var t0=new Date();t0.setHours(0,0,0,0),changed=false;
+    [].slice.call(document.querySelectorAll(".acard")).forEach(function(c){
+      var id=c.dataset.id;
+      c.classList.remove("archived");
+      c.classList.remove("restored");
+      if(state[id]){c.classList.add("archived");return;}
+      var until=restored[id];
+      if(until!==undefined){
+        if(until>Date.now()){c.classList.add("restored");c.title="恢复中，3 天后自动回到「已完成」";return;}
+        delete restored[id];changed=true;c.classList.add("archived");return;
+      }
+      var p=c.dataset.posted;
+      if(!p)return;
+      var d=new Date(p+"T00:00:00");
+      if(!isNaN(d.getTime())&&(t0-d)/86400000>7)c.classList.add("archived");
+    });
+    if(changed)saveRestored();
+  }
+  function openSync(){
+    if(!ssheet)return;
+    ssheet.classList.add("show");
+    renderSyncStatus();
+    if(ssTk)ssTk.focus();
+  }
+  function closeSync(){if(ssheet)ssheet.classList.remove("show");}
+  if(syncBtn)syncBtn.addEventListener("click",openSync);
+  if(ssClose)ssClose.addEventListener("click",closeSync);
+  if(ssheet)ssheet.addEventListener("click",function(ev){if(ev.target===ssheet)closeSync();});
+  if(ssSave)ssSave.addEventListener("click",function(){
+    var t=(ssTk&&ssTk.value||"").trim();
+    if(t){try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}if(ssTk)ssTk.value="";}
+    syncState.err="";renderSyncStatus();
+    syncNow();
+  });
+  if(ssClear)ssClear.addEventListener("click",function(){
+    try{localStorage.removeItem(TOKEN_KEY);}catch(e){}
+    syncState.when="";syncState.err="";renderSyncStatus();
+  });
+  renderSyncStatus();
+  if(syncOn())syncNow();
 
   window.__wodeReady=true;   /* 主脚本跑完了，把「6 秒兜底放行」关掉 */
 })();
