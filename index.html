@@ -374,7 +374,6 @@ setTimeout(function(){
     }
   }
   function gateOpen(animate){
-    try{sessionStorage.setItem("wode_unlocked_v1","1");}catch(e){}
     var brand=document.getElementById("brand");
     if(!gateEl){document.body.classList.remove("locked");showPendingToast();return;}
     if(!animate||!brand||!gateTitle){
@@ -482,10 +481,10 @@ setTimeout(function(){
       setTimeout(hideAsk,3500);
     });
   }
-  function pkUnlock(){
+  function pkUnlock(silent){
     var rec=pkGet();
-    if(!rec){if(gateMsg)gateMsg.textContent="这台设备还没登记，先输密码";return;}
-    if(!pkAvailable()){if(gateMsg)gateMsg.textContent="这个浏览器不支持，先输密码";return;}
+    if(!rec){if(!silent&&gateMsg)gateMsg.textContent="这台设备还没登记，先输密码";return;}
+    if(!pkAvailable()){if(!silent&&gateMsg)gateMsg.textContent="这个浏览器不支持，先输密码";return;}
     if(gateMsg)gateMsg.textContent="";
     navigator.credentials.get({publicKey:{
       challenge:pkRand(32),
@@ -495,7 +494,7 @@ setTimeout(function(){
       if(res)gateOpen(true);
       else throw new Error("cancelled");
     }).catch(function(err){
-      if(gateMsg)gateMsg.textContent="没通过验证（"+((err&&err.name)||"取消")+"）";
+      if(!silent&&gateMsg)gateMsg.textContent="没通过验证（"+((err&&err.name)||"取消")+"）";
     });
   }
   if(askYes)askYes.addEventListener("click",pkRegister);
@@ -503,18 +502,17 @@ setTimeout(function(){
     try{localStorage.setItem(PK_ASK,String(Date.now()));}catch(e){}
     hideAsk();
   });
-  if(pkBtn)pkBtn.addEventListener("click",pkUnlock);
-  if(pkBtn&&pkAvailable()&&pkGet()){
-    pkBtn.hidden=false;
-    pkBtn.textContent="用"+pkName()+"进入";
-  }
+  if(pkBtn)pkBtn.addEventListener("click",function(){pkUnlock(false);});
   try{
-    var remembered=false;
-    try{remembered=sessionStorage.getItem("wode_unlocked_v1")==="1";}catch(e){}
-    if(!gateEl||remembered){gateOpen(false);}
+    if(!gateEl){gateOpen(false);}
     else{
       if(gateForm)gateForm.addEventListener("submit",function(ev){ev.preventDefault();gateTry();});
       if(gatePw)gatePw.focus();
+      /* 每次进来都要验证：登记过指纹/面容的设备多一个按钮，没登记的就只能输密码 */
+      if(pkBtn&&pkAvailable()&&pkGet()){
+        pkBtn.hidden=false;
+        pkBtn.textContent="用"+pkName()+"进入";
+      }
     }
   }catch(e){
     document.body.classList.remove("locked");
