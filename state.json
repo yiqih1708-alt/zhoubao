@@ -1,6 +1,6 @@
 {
  "v": 1,
- "ts": "2026-10-14T10:53:31.735Z",
+ "ts": "2026-10-14T10:53:38.421Z",
  "done": {
   "2026-10-15|3|个人事务": [
    1,
@@ -13,6 +13,14 @@
   "ann|Intelligent Robotics|最终项目分组已公布": [
    1,
    0
+  ],
+  "ann|Libraries and Learning Resources for EPS 26/27|PGT Skills Chat 11/04 13:00": [
+   1,
+   1791975215059
+  ],
+  "ann|School of Engineering - Student Guide|SEEN 秋季招聘会 10/21 11:00": [
+   1,
+   1791975216190
   ]
  },
  "pins": {
