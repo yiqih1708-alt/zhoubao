@@ -148,15 +148,15 @@ body.pagercollapsed .pagerdot{display:flex}
 .tri{width:44px;height:34px;padding:0;border-radius:10px;background:var(--card);color:var(--blue);
  font-size:13px;line-height:1;box-shadow:var(--shadow)}
 .tri:disabled{color:var(--label3);box-shadow:none;background:transparent}
-.weeklabel{font-size:13px;font-weight:600;color:var(--label2);min-width:190px;text-align:center;
- font-variant-numeric:tabular-nums}
+.weeklabel{font-size:13px;font-weight:600;color:var(--label2);width:250px;text-align:center;
+ white-space:nowrap;font-variant-numeric:tabular-nums}
 .tri.home{width:auto;min-width:54px;padding:0 11px;font-size:12px}
 .tri.note{width:auto;min-width:44px;padding:0 10px;font-size:12px}
 @media (max-width:700px){
- .pager{gap:8px;bottom:10px;padding:5px 8px}
+ .pager{gap:8px;bottom:10px;padding:5px 8px;width:calc(100% - 20px);justify-content:space-between}
  .tri{width:40px;height:32px}
  .tri.home,.tri.note{min-width:44px;padding:0 8px;font-size:11.5px}
- .weeklabel{min-width:0;flex:1 1 110px;font-size:12px}
+ .weeklabel{width:auto;min-width:0;flex:1 1 110px;font-size:12px}
 }
 .tri.note.has{box-shadow:0 0 0 2px color-mix(in srgb,var(--blue) 45%,transparent)}
 /* 写一句话交给 Codex 的弹出框 */
@@ -759,13 +759,6 @@ setTimeout(function(){
       pg0={left:r.left,w:r.width,h:r.height,x:ev.clientX,id:ev.pointerId,
            span:Math.max(120,r.left-DOT_LEFT)};
       pmoved=false;pp=0;
-      pagerEl.classList.add("dragging");
-      pagerEl.style.left=r.left+"px";
-      pagerEl.style.transform="none";
-      pagerEl.style.width=r.width+"px";
-      pagerEl.style.height=r.height+"px";
-      pagerEl.style.overflow="hidden";
-      if(pagerDot)pagerDot.style.opacity="0";
     });
     pagerEl.addEventListener("pointermove",function(ev){
       if(!pg0)return;
@@ -773,7 +766,15 @@ setTimeout(function(){
       if(!pmoved){
         if(Math.abs(dx)<6)return;
         pmoved=true;
-        /* 真的开始拖了才抓指针：抓早了会把按钮的点击也吃掉 */
+        /* 真开始拖了才接管几何：单纯点按钮时不动它，免得跳 */
+        pagerEl.classList.add("dragging");
+        pagerEl.style.left=pg0.left+"px";
+        pagerEl.style.transform="none";
+        pagerEl.style.width=pg0.w+"px";
+        pagerEl.style.height=pg0.h+"px";
+        pagerEl.style.overflow="hidden";
+        if(pagerDot)pagerDot.style.opacity="0";
+        /* 抓指针：抓早了会把按钮的点击也吃掉 */
         try{pagerEl.setPointerCapture(pg0.id);}catch(e){}
       }
       /* 位移严格跟手（往右给点阻尼），缩小量按「拖到左下角」算，所以两者到角落刚好同时完成 */
