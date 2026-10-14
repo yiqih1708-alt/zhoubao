@@ -1,11 +1,7 @@
 {
  "v": 1,
- "ts": "2026-10-14T16:27:36.621Z",
+ "ts": "2026-10-14T16:31:28.173Z",
  "done": {
-  "2026-10-14|个人事务|去健身房": [
-   1,
-   1791995224891
-  ],
   "ann|Intelligent Robotics|最终项目分组已公布": [
    1,
    0
@@ -18,13 +14,21 @@
    1,
    1791975216190
   ],
-  "2026-10-15|Industrial Automation and Robotics|听在线学术报告 10:00": [
+  "2026-10-14|个人事务|去健身房": [
+   1,
+   1791995224891
+  ],
+  "2026-10-15|0|Industrial Automation and Robotics": [
    0,
    1791976732509
   ],
   "ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00": [
    0,
    1791976781844
+  ],
+  "2026-10-15|Industrial Automation and Robotics|听在线学术报告 10:00": [
+   0,
+   1791976732509
   ]
  },
  "pins": {
