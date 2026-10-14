@@ -137,7 +137,8 @@ body.showdone .acard.archived{display:flex}
  box-shadow:0 2px 12px rgba(0,0,0,.16);
  transition:transform .3s cubic-bezier(.22,.9,.28,1),opacity .24s ease}
 .pager.dragging{transition:none}
-.pager.collapsed{opacity:0;pointer-events:none;transform:translateX(-50%) scale(.72)}
+.pager.collapsed{display:none}
+.pager{touch-action:none}
 .pagerdot{position:fixed;left:14px;bottom:14px;z-index:31;display:none;
  width:42px;height:42px;padding:0;border-radius:50%;align-items:center;justify-content:center;
  font-size:17px;line-height:1;font-weight:600;color:var(--label2);
@@ -688,45 +689,126 @@ setTimeout(function(){
   nextBtn.addEventListener("click",function(){goTo(idx+1);});
   if(homeBtn)homeBtn.addEventListener("click",function(){goTo(homeIdx());});
 
-  /* ---- 按钮条：按住往左拖能收成左下角的小圆，点小圆恢复 ---- */
+  /* ---- 按钮条：按住往左拖，边拖边缩成左下角的小圆；点小圆再长回长条 ---- */
   var pagerEl=document.querySelector(".pager");
   var pagerDot=document.getElementById("pagerdot");
   var PAGER_KEY="wode_pager_collapsed_v1";
+  var DOT_W=42, DOT_LEFT=14, MORPH_PX=220;
+  var pagerSize=null;
+  function pagerKids(){return pagerEl?[].slice.call(pagerEl.children):[];}
+  function kidsOpacity(v){pagerKids().forEach(function(k){k.style.opacity=v;});}
+  function clearPagerInline(){
+    if(!pagerEl)return;
+    pagerEl.style.transition="";
+    pagerEl.style.left="";
+    pagerEl.style.transform="";
+    pagerEl.style.width="";
+    pagerEl.style.height="";
+    pagerEl.style.overflow="";
+    pagerEl.classList.remove("dragging");
+    pagerKids().forEach(function(k){k.style.transition="";});
+  }
   function setPagerCollapsed(on,save){
     document.body.classList.toggle("pagercollapsed",on);
     if(pagerEl)pagerEl.classList.toggle("collapsed",on);
     if(save&&store){try{on?store.setItem(PAGER_KEY,"1"):store.removeItem(PAGER_KEY);}catch(e){}}
   }
   try{if(store&&store.getItem(PAGER_KEY)==="1")setPagerCollapsed(true,false);}catch(e){}
-  if(pagerDot)pagerDot.addEventListener("click",function(){setPagerCollapsed(false,true);});
+  function measurePager(){
+    if(!pagerEl||pagerEl.classList.contains("collapsed"))return pagerSize;
+    var r=pagerEl.getBoundingClientRect();
+    if(r.width)pagerSize={w:r.width,h:r.height};
+    return pagerSize;
+  }
+  measurePager();
+  window.addEventListener("resize",function(){if(!document.body.classList.contains("pagercollapsed"))measurePager();});
+  function expandPager(){
+    if(!pagerEl)return;
+    var sz=pagerSize||{w:420,h:46};
+    /* 先把自己摆成小圆的样子（和小圆重合），再长回长条 */
+    pagerEl.style.transition="none";
+    pagerEl.style.left=DOT_LEFT+"px";
+    pagerEl.style.transform="none";
+    pagerEl.style.width=DOT_W+"px";
+    pagerEl.style.height=DOT_W+"px";
+    pagerEl.style.overflow="hidden";
+    kidsOpacity(0);
+    setPagerCollapsed(false,true);
+    void pagerEl.offsetWidth;
+    /* 等一帧再改目标值，浏览器才会老老实实从「小圆」长回去（不然会直接跳） */
+    requestAnimationFrame(function(){
+      pagerEl.style.transition="left .38s cubic-bezier(.22,.9,.28,1),width .38s cubic-bezier(.22,.9,.28,1),height .38s cubic-bezier(.22,.9,.28,1)";
+      pagerEl.style.left="";
+      pagerEl.style.transform="";
+      pagerEl.style.width=sz.w+"px";
+      pagerEl.style.height=sz.h+"px";
+      /* 内容淡入的曲线跟几何用同一条，才算真的「反向」 */
+      pagerKids().forEach(function(k){k.style.transition="opacity .38s cubic-bezier(.22,.9,.28,1)";});
+      kidsOpacity(1);
+    });
+    setTimeout(function(){kidsOpacity("");clearPagerInline();},600);
+  }
+  if(pagerDot)pagerDot.addEventListener("click",expandPager);
   if(pagerEl){
-    var pdrag=null,pdx=0,pmoved=false;
+    var pg0=null,pmoved=false,pp=0;
     pagerEl.addEventListener("pointerdown",function(ev){
       if(ev.button!==undefined&&ev.button!==0)return;
-      pdrag=ev.clientX;pdx=0;pmoved=false;
+      var r=pagerEl.getBoundingClientRect();
+      if(!r.width)return;
+      pagerSize={w:r.width,h:r.height};
+      pg0={left:r.left,w:r.width,h:r.height,x:ev.clientX};
+      pmoved=false;pp=0;
       pagerEl.classList.add("dragging");
+      pagerEl.style.left=r.left+"px";
+      pagerEl.style.transform="none";
+      pagerEl.style.width=r.width+"px";
+      pagerEl.style.height=r.height+"px";
+      pagerEl.style.overflow="hidden";
+      if(pagerDot)pagerDot.style.opacity="0";
+      /* 拖动过程中按钮条自己在缩小左移，要抓指针，否则松手的 pointerup 收不到 */
+      try{pagerEl.setPointerCapture(ev.pointerId);}catch(e){}
     });
     pagerEl.addEventListener("pointermove",function(ev){
-      if(pdrag===null)return;
-      var dx=ev.clientX-pdrag;
+      if(!pg0)return;
+      var dx=ev.clientX-pg0.x;
       if(!pmoved&&Math.abs(dx)<6)return;
       pmoved=true;
-      pdx=dx>0?dx*0.35:dx;              /* 往右拉给点阻尼 */
-      pagerEl.style.transform="translateX(calc(-50% + "+pdx+"px))";
+      var p=Math.max(0,Math.min(1,(-dx)/MORPH_PX));
+      pp=p;
+      pagerEl.style.left=(pg0.left+(DOT_LEFT-pg0.left)*p)+"px";
+      pagerEl.style.width=(pg0.w+(DOT_W-pg0.w)*p)+"px";
+      pagerEl.style.height=(pg0.h+(DOT_W-pg0.h)*p)+"px";
+      kidsOpacity(1-p);
+      if(pagerDot)pagerDot.style.opacity=String(p>0.75?(p-0.75)/0.25:0);
     });
     function endPagerDrag(){
-      if(pdrag===null)return;
-      pdrag=null;
-      pagerEl.classList.remove("dragging");
+      if(!pg0)return;
+      var p=pp,moved=pmoved,sz=pagerSize;
+      pg0=null;pmoved=false;pp=0;
+      if(moved&&p>=0.85){
+        /* 已经缩到小圆那边了，交接看不出跳变 */
+        if(pagerDot)pagerDot.style.opacity="";
+        setPagerCollapsed(true,true);
+        kidsOpacity("");
+        clearPagerInline();
+        return;
+      }
+      /* 没拖够：慢慢弹回长条 */
+      pagerEl.style.transition="left .32s cubic-bezier(.22,.9,.28,1),width .32s cubic-bezier(.22,.9,.28,1),height .32s cubic-bezier(.22,.9,.28,1)";
+      pagerEl.style.left="";
       pagerEl.style.transform="";
-      if(pmoved&&pdx<-60)setPagerCollapsed(true,true);
-      setTimeout(function(){pmoved=false;},0);
+      pagerEl.style.width=(sz?sz.w:pg0&&pg0.w||"")+"px";
+      pagerEl.style.height=(sz?sz.h:pg0&&pg0.h||"")+"px";
+      pagerKids().forEach(function(k){k.style.transition="opacity .2s ease";});
+      kidsOpacity(1);
+      if(pagerDot)pagerDot.style.opacity="0";
+      setTimeout(function(){kidsOpacity("");clearPagerInline();},380);
     }
     pagerEl.addEventListener("pointerup",endPagerDrag);
     pagerEl.addEventListener("pointercancel",endPagerDrag);
-    pagerEl.addEventListener("pointerleave",function(){if(pdrag!==null&&pmoved)endPagerDrag();});
+    window.addEventListener("pointerup",endPagerDrag);
     /* 拖过之后那一下别当成点击（免得松手时误触按钮） */
-    pagerEl.addEventListener("click",function(ev){if(pmoved){ev.preventDefault();ev.stopPropagation();}},true);
+    pagerEl.addEventListener("click",function(ev){if(pmoved||pp>0.05){ev.preventDefault();ev.stopPropagation();}},true);
   }
 
   /* 一次滚轮/方向键 = 平滑滑到上一周或下一周 */
