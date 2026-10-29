@@ -1,6 +1,6 @@
 {
  "v": 1,
- "ts": "2026-10-29T16:14:46.693Z",
+ "ts": "2026-10-29T16:14:50.260Z",
  "done": {
   "ann|Intelligent Robotics|最终项目分组已公布": [
    1,
@@ -62,14 +62,6 @@
    1,
    1792588728058
   ],
-  "ann|Intelligent Robotics|课程期中反馈问卷已开放": [
-   1,
-   1793290483022
-  ],
-  "ann|Industrial Automation and Robotics|课程期中反馈问卷已开放": [
-   1,
-   1793290484334
-  ],
   "2026-10-15|0|Industrial Automation and Robotics": [
    0,
    1791976732509
@@ -77,6 +69,14 @@
   "ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00": [
    0,
    1791976781844
+  ],
+  "ann|Intelligent Robotics|课程期中反馈问卷已开放": [
+   0,
+   1793290486727
+  ],
+  "ann|Industrial Automation and Robotics|课程期中反馈问卷已开放": [
+   0,
+   1793290487884
   ]
  },
  "pins": {
