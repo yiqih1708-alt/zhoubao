@@ -1,6 +1,6 @@
 {
  "v": 1,
- "ts": "2026-10-29T16:15:55.298Z",
+ "ts": "2026-11-02T11:58:04.614Z",
  "done": {
   "ann|Intelligent Robotics|最终项目分组已公布": [
    1,
@@ -66,6 +66,22 @@
    1,
    1793290552897
   ],
+  "ann|Intelligent Robotics|课程期中反馈问卷已开放": [
+   1,
+   1793620679442
+  ],
+  "ann|Industrial Automation and Robotics|课程期中反馈问卷已开放": [
+   1,
+   1793620680387
+  ],
+  "ann|Research and Professional Skills|课程期中反馈问卷已开放": [
+   1,
+   1793620681053
+  ],
+  "ann|School of Engineering - Student Guide|SEEN 求职面试技巧工作坊 11/04": [
+   1,
+   1793620682187
+  ],
   "2026-10-15|0|Industrial Automation and Robotics": [
    0,
    1791976732509
@@ -73,14 +89,6 @@
   "ann|Industrial Automation and Robotics|在线学术报告 10/15 10:00": [
    0,
    1791976781844
-  ],
-  "ann|Intelligent Robotics|课程期中反馈问卷已开放": [
-   0,
-   1793290486727
-  ],
-  "ann|Industrial Automation and Robotics|课程期中反馈问卷已开放": [
-   0,
-   1793290487884
   ]
  },
  "pins": {
