@@ -645,6 +645,10 @@ html[data-theme] .chip,
 html[data-theme] .acard,
 html[data-theme] .toast .tag,
 html[data-theme] .lg i{filter:grayscale(1)}
+html[data-theme="paper"] .chip .ct{color:#0b0b0b!important}
+html[data-theme="ink"] .chip .ct{color:#f5f5f5!important}
+html[data-theme="ink"] .chip.past .ct{color:#c4c4c4!important}
+html[data-theme] .acard b{color:var(--headtext)!important}
 html[data-theme] .day.holiday{background:color-mix(in srgb,var(--label) 7%,var(--cell))}
 html[data-theme] .gate{border-left-color:var(--label);border-right-color:var(--headtext)}
 .tri.theme{display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
