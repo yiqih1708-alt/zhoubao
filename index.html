@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>重要截止日期</title>
+<script>
+(function(){
+  try{
+    var saved=localStorage.getItem("wode_theme_v1");
+    var theme=(saved==="paper"||saved==="ink")?saved:
+      (window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?"ink":"paper");
+    document.documentElement.dataset.theme=theme;
+  }catch(e){}
+})();
+</script>
 <style>
 :root{
  --bg:#F2F2F7;--bg2:#FFFFFF;--card:#FFFFFF;--cell:#FFFFFF;--cell2:#FAFAFC;
@@ -610,6 +620,45 @@ aside .ttl{
   .gtitle{font-size:62px}
   .gate{border-left-width:7px;border-right-width:7px}
 }
+
+/* Monochrome themes: paper and ink */
+html[data-theme="paper"]{
+  color-scheme:light;
+  --bg:#f4f4f2;--bg2:#ffffff;--card:#ffffff;--cell:#ffffff;--cell2:#ececea;
+  --label:#0b0b0b;--label2:#4e4e4e;--label3:#777777;--sep:#c8c8c5;--blue:#111111;
+  --shadow:0 1px 0 rgba(0,0,0,.05),0 12px 28px rgba(0,0,0,.08);
+  --gridline:rgba(0,0,0,.055);--header:#080808;--header2:#181818;
+  --headerline:#333333;--headtext:#ffffff;--headmuted:#bdbdbd;--lime:#ffffff;
+}
+html[data-theme="ink"]{
+  color-scheme:dark;
+  --bg:#060606;--bg2:#121212;--card:#111111;--cell:#101010;--cell2:#080808;
+  --label:#f5f5f5;--label2:#c4c4c4;--label3:#858585;--sep:#2b2b2b;--blue:#f5f5f5;
+  --shadow:0 1px 0 rgba(255,255,255,.03),0 16px 34px rgba(0,0,0,.35);
+  --gridline:rgba(255,255,255,.045);--header:#000000;--header2:#111111;
+  --headerline:#2c2c2c;--headtext:#ffffff;--headmuted:#a8a8a8;--lime:#ffffff;
+}
+html[data-theme="ink"] .lists{background:#090909}
+html[data-theme="ink"] .segpill{background:#f5f5f5}
+html[data-theme="ink"] .segbtn.on{color:#080808}
+.tri.theme{display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
+.tri.theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
+.tri.theme .half{fill:currentColor;stroke:none}
+::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
+html.theme-liquid::view-transition-old(root){z-index:1}
+html.theme-liquid::view-transition-new(root){
+  z-index:2;
+  clip-path:circle(0 at var(--theme-x,50vw) var(--theme-y,50vh));
+  animation:themeLiquid .78s cubic-bezier(.18,.82,.16,1) forwards;
+}
+@keyframes themeLiquid{
+  0%{clip-path:circle(0 at var(--theme-x,50vw) var(--theme-y,50vh))}
+  72%{clip-path:circle(120vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
+  100%{clip-path:circle(170vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
+}
+@media (prefers-reduced-motion:reduce){
+  html.theme-liquid::view-transition-new(root){animation:none}
+}
 </style>
 </head>
 <body class="locked">
@@ -692,6 +741,12 @@ setTimeout(function(){
   <button id="prev" class="tri" aria-label="上一周">◀</button>
   <button id="home" class="tri home" type="button" aria-label="回到本周">本周</button>
   <span class="weeklabel" id="weeklabel"></span>
+  <button id="theme" class="tri theme" type="button" aria-label="切换黑白主题">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.3"/>
+      <path class="half" d="M12 3.7a8.3 8.3 0 0 1 0 16.6Z"/>
+    </svg>
+  </button>
   <button id="write" class="tri note" type="button" aria-label="写一句话，让 Codex 放进日历">写</button>
   <button id="sync" class="tri note" type="button" aria-label="跨设备同步设置">同步</button>
   <button id="next" class="tri" aria-label="下一周">▶</button>
@@ -722,6 +777,65 @@ setTimeout(function(){
 </div>
 <script>
 (function(){
+  /* ---- 黑白主题：从按钮圆心向外像液体一样铺开 ---- */
+  var THEME_KEY="wode_theme_v1";
+  var root=document.documentElement;
+  var themeBtn=document.getElementById("theme");
+  var reduceMotion=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+  function paintTheme(theme,save){
+    root.dataset.theme=theme;
+    root.style.colorScheme=theme==="ink"?"dark":"light";
+    if(save){
+      try{localStorage.setItem(THEME_KEY,theme);}catch(e){}
+    }
+    if(themeBtn){
+      var next=theme==="ink"?"白色":"黑色";
+      themeBtn.setAttribute("aria-label","切换到"+next+"主题");
+      themeBtn.title="切换到"+next+"主题";
+    }
+  }
+  if(root.dataset.theme!=="paper"&&root.dataset.theme!=="ink"){
+    paintTheme(window.matchMedia&&window.matchMedia("(prefers-color-scheme:dark)").matches?
+      "ink":"paper",false);
+  }else{
+    paintTheme(root.dataset.theme,false);
+  }
+  function switchTheme(){
+    var from=root.dataset.theme==="ink"?"ink":"paper";
+    var to=from==="ink"?"paper":"ink";
+    if(!themeBtn){
+      paintTheme(to,true);
+      return;
+    }
+    var r=themeBtn.getBoundingClientRect();
+    root.style.setProperty("--theme-x",Math.round(r.left+r.width/2)+"px");
+    root.style.setProperty("--theme-y",Math.round(r.top+r.height/2)+"px");
+    if(!document.startViewTransition||reduceMotion){
+      paintTheme(to,true);
+      return;
+    }
+    root.classList.add("theme-liquid");
+    var transition=null;
+    try{
+      transition=document.startViewTransition(function(){paintTheme(to,true);});
+    }catch(e){
+      root.classList.remove("theme-liquid");
+      paintTheme(to,true);
+      return;
+    }
+    transition.finished.finally(function(){root.classList.remove("theme-liquid");});
+  }
+  if(themeBtn)themeBtn.addEventListener("click",switchTheme);
+  try{
+    var scheme=window.matchMedia("(prefers-color-scheme:dark)");
+    scheme.addEventListener("change",function(ev){
+      try{
+        var saved=localStorage.getItem(THEME_KEY);
+        if(saved!=="paper"&&saved!=="ink")paintTheme(ev.matches?"ink":"paper",false);
+      }catch(e){}
+    });
+  }catch(e){}
+
   /* ---- 进门密码：只显示「周报」两个字和密码框；输对了周报字上移、界面展开 ---- */
   var GATE_SALT="zhoubao-lock-7f3a", GATE_ITER=2000;
   var GATE_HASH="2d43d0c0a3935c6deeba80ec0dcac3dc02d7d2f113399f1ed330be8dc488253e";
@@ -784,6 +898,13 @@ setTimeout(function(){
   var gateForm=document.getElementById("gform");
   var gatePw=document.getElementById("gpw");
   var gateMsg=document.getElementById("gmsg");
+  /* 本机 /private/ 已由服务端会话保护，不再叠加前端密码门。 */
+  var SERVER_PRIVATE=/^\/private(?:\/|$)/.test(location.pathname)&&
+    /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+  if(SERVER_PRIVATE){
+    document.body.classList.remove("locked");
+    if(gateEl&&gateEl.parentNode)gateEl.parentNode.removeChild(gateEl);
+  }
   /* 每个浏览器按自然日只验证一次；跨天后刷新或再次显示页面时重新上锁 */
   var DAY_KEY="wode_unlock_day_v2";
   function localDayKey(){
@@ -791,6 +912,7 @@ setTimeout(function(){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
   function dailyFresh(){
+    if(SERVER_PRIVATE)return true;
     try{return localStorage.getItem(DAY_KEY)===localDayKey();}catch(e){return false;}
   }
   function markDailyUnlock(){
