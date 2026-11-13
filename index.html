@@ -191,6 +191,20 @@ body.pagercollapsed .pagerdot{display:flex}
 .sheet textarea{min-height:104px;resize:vertical;font:inherit;font-size:13.5px;line-height:1.5;
  color:var(--label);background:color-mix(in srgb,var(--label) 5%,transparent);
  border:.5px solid var(--sep);border-radius:12px;padding:10px 11px;outline:none}
+.photo-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:-2px}
+.photo-actions #skphoto{display:none}
+.addphoto{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:4px;
+ background:var(--bg2);color:var(--label);box-shadow:inset 0 0 0 1px var(--sep)}
+.addphoto svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;
+ stroke-linecap:round;stroke-linejoin:round}
+.phint{font-size:10.5px;color:var(--label3)}
+.photoprev{display:flex;gap:8px;flex-wrap:wrap}
+.photoitem{position:relative;width:76px;height:76px;border-radius:4px;overflow:hidden;
+ background:var(--bg);box-shadow:inset 0 0 0 1px var(--sep)}
+.photoitem img{width:100%;height:100%;object-fit:cover;display:block}
+.photoitem button{position:absolute;right:3px;top:3px;width:21px;height:21px;padding:0;
+ border-radius:50%;background:rgba(9,15,21,.82);color:#fff;font-size:14px;line-height:21px;
+ box-shadow:none}
 .sheet .skrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sheet .skst{flex:1 1 180px;font-size:11.5px;color:var(--label2)}
 .sheet button{font-size:13px;padding:7px 14px}
@@ -688,6 +702,15 @@ setTimeout(function(){
     <h2>写一句话，我放进日历</h2>
     <div class="hint">写清楚哪天、几点、要做什么就行，课程名我会补全</div>
     <textarea id="sktx" placeholder="例如：下周三下午交 Research and Professional Skills 的作业&#10;周五 10:00 去图书馆还书"></textarea>
+    <div class="photo-actions">
+      <input id="skphoto" type="file" accept="image/*" multiple hidden>
+      <button class="addphoto" id="skpick" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        添加照片
+      </button>
+      <span class="phint" id="skpcount">最多 4 张，会自动压缩</span>
+    </div>
+    <div class="photoprev" id="skpreviews"></div>
     <div class="skrow">
       <span class="skst" id="skst"></span>
       <button class="gh" id="skgh" type="button">打开 GitHub 收件箱</button>
@@ -1582,6 +1605,11 @@ setTimeout(function(){
   var skgh=document.getElementById("skgh");
   var skok=document.getElementById("skok");
   var skno=document.getElementById("skno");
+  var skphoto=document.getElementById("skphoto");
+  var skpick=document.getElementById("skpick");
+  var skpreviews=document.getElementById("skpreviews");
+  var skpcount=document.getElementById("skpcount");
+  var photoDrafts=[], uploadedPhotoLinks=[], MAX_PHOTOS=4;
   var inboxQ=[];
   if(store){try{inboxQ=JSON.parse(store.getItem(QKEY)||"[]")||[];}catch(e){inboxQ=[];}}
   function saveQueue(){if(store){try{store.setItem(QKEY,JSON.stringify(inboxQ));}catch(e){}}}
@@ -1590,16 +1618,91 @@ setTimeout(function(){
     if(!sheet)return;
     sheet.classList.add("show");
     setSt("");skgh.classList.remove("show");
+    uploadedPhotoLinks=[];
     if(sktx)sktx.focus();
   }
   function closeSheet(){if(sheet)sheet.classList.remove("show");}
-  function issueUrl(text){
+  function issueUrl(text, imageUrls){
     var title="收件箱 "+new Date().toLocaleString("zh-CN",{hour12:false});
-    return ISSUE+"?title="+encodeURIComponent(title)+"&body="+encodeURIComponent(text+"\n\n<!-- codex-inbox -->");
+    var body=text;
+    (imageUrls||[]).forEach(function(u){
+      body+="\n\n!["+((u&&u.name)||"photo")+"]("+((u&&u.url)||"")+")";
+    });
+    return ISSUE+"?title="+encodeURIComponent(title)+"&body="+encodeURIComponent(body+"\n\n<!-- codex-inbox -->");
   }
-  function postInbox(text){
+  function resetPhotos(){
+    photoDrafts=[];uploadedPhotoLinks=[];
+    if(skphoto)skphoto.value="";
+    renderPhotos();
+  }
+  function renderPhotos(){
+    if(!skpreviews)return;
+    skpreviews.textContent="";
+    photoDrafts.forEach(function(p,i){
+      var box=document.createElement("div");box.className="photoitem";
+      var img=document.createElement("img");img.src=p.data;img.alt=p.name||("照片 "+(i+1));
+      var rm=document.createElement("button");rm.type="button";rm.textContent="×";
+      rm.setAttribute("aria-label","删除 "+(p.name||"照片"));
+      rm.addEventListener("click",function(){photoDrafts.splice(i,1);uploadedPhotoLinks=[];renderPhotos();});
+      box.appendChild(img);box.appendChild(rm);skpreviews.appendChild(box);
+    });
+    if(skpcount)skpcount.textContent=photoDrafts.length?
+      ("已添加 "+photoDrafts.length+" / "+MAX_PHOTOS+" 张"):
+      "最多 "+MAX_PHOTOS+" 张，会自动压缩";
+  }
+  function readPhoto(file){
+    return new Promise(function(resolve,reject){
+      if(!file||!/^image\//.test(file.type||""))return reject(new Error("不是图片"));
+      var fr=new FileReader();
+      fr.onerror=function(){reject(new Error("读取失败"));};
+      fr.onload=function(){
+        var im=new Image();
+        im.onerror=function(){reject(new Error("图片格式不支持"));};
+        im.onload=function(){
+          var maxSide=1800;
+          var scale=Math.min(1,maxSide/Math.max(im.width,im.height));
+          var cw=Math.max(1,Math.round(im.width*scale)),ch=Math.max(1,Math.round(im.height*scale));
+          var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
+          var g=cv.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,cw,ch);g.drawImage(im,0,0,cw,ch);
+          var usePng=(file.type==="image/png"&&file.size<900000);
+          resolve({name:file.name||"photo",mime:usePng?"image/png":"image/jpeg",
+                   data:cv.toDataURL(usePng?"image/png":"image/jpeg",usePng?0.9:0.82)});
+        };
+        im.src=fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  function addPhotoFiles(files){
+    var list=[].slice.call(files||[]);
+    var room=MAX_PHOTOS-photoDrafts.length;
+    if(room<=0){setSt("最多 "+MAX_PHOTOS+" 张照片");return;}
+    Promise.all(list.slice(0,room).map(readPhoto)).then(function(imgs){
+      photoDrafts=photoDrafts.concat(imgs);uploadedPhotoLinks=[];renderPhotos();setSt("");
+    }).catch(function(err){setSt("照片读取失败："+(err&&err.message||"未知错误"));});
+  }
+  function uploadImagesToGitHub(photos){
+    if(!ghToken())return Promise.reject(new Error("没有同步 token"));
+    var stamp=Date.now().toString(36);
+    return Promise.all(photos.map(function(p,i){
+      var ext=p.mime==="image/png"?".png":(p.mime==="image/webp"?".webp":".jpg");
+      var path="inbox/uploads/"+stamp+"-"+i+ext;
+      var parts=p.data.split(",");
+      return fetch("https://api.github.com/repos/"+SYNC.owner+"/"+SYNC.repo+"/contents/"+path,
+        {method:"PUT",headers:Object.assign({"Content-Type":"application/json"},ghHeaders()),
+         body:JSON.stringify({message:"inbox photo "+stamp,branch:SYNC.branch,content:parts[1]||""})})
+        .then(function(r){
+          if(!r.ok)throw new Error("照片上传失败 "+r.status);
+          return {name:p.name,url:"https://raw.githubusercontent.com/"+SYNC.owner+"/"+SYNC.repo+"/"+
+            SYNC.branch+"/"+path.split("/").map(encodeURIComponent).join("/")};
+        });
+    }));
+  }
+  function postInbox(text, photos){
     return fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text:text,from:"page"})})
+      body:JSON.stringify({text:text,from:"page",images:(photos||[]).map(function(p){
+        return {name:p.name,mime:p.mime,data:p.data};
+      })})})
       .then(function(r){return r.json();})
       .then(function(j){if(!j||!j.ok)throw new Error("server said no");return true;});
   }
@@ -1623,24 +1726,40 @@ setTimeout(function(){
   });
   if(skgh)skgh.addEventListener("click",function(){
     var t=(sktx&&sktx.value||"").trim();
-    if(t)window.open(issueUrl(t),"_blank");
+    if(t||uploadedPhotoLinks.length)window.open(issueUrl(t||"请看照片",uploadedPhotoLinks),"_blank");
   });
+  if(skpick&&skphoto)skpick.addEventListener("click",function(){skphoto.click();});
+  if(skphoto)skphoto.addEventListener("change",function(){addPhotoFiles(skphoto.files);});
   if(skok)skok.addEventListener("click",function(){
     var t=(sktx&&sktx.value||"").trim();
-    if(!t){setSt("先写点什么");return;}
+    if(!t&&!photoDrafts.length){setSt("先写点什么或加一张照片");return;}
+    if(!t)t="请看照片";
     setSt("提交中…");
-    postInbox(t).then(function(){
+    postInbox(t,photoDrafts).then(function(){
       setSt("已交给 Codex，刷新一下就能在日历里看到",true);
-      sktx.value="";skgh.classList.remove("show");
+      sktx.value="";resetPhotos();skgh.classList.remove("show");
       if(writeBtn)writeBtn.classList.add("has");   /* 记上「还有没处理的留言」 */
       setTimeout(closeSheet,1500);
     }).catch(function(){
-      inboxQ.push({text:t,ts:new Date().toISOString()});saveQueue();
       copyText(t);
-      setSt("本机服务连不上：已存下并复制到剪贴板，点右边按钮打开 GitHub 收件箱");
-      skgh.classList.add("show");
-      if(writeBtn)writeBtn.classList.add("has");
-      try{window.open(issueUrl(t),"_blank");}catch(e){}
+      if(photoDrafts.length){
+        setSt("本机服务连不上，正在把照片传到 GitHub…");
+        uploadImagesToGitHub(photoDrafts).then(function(urls){
+          uploadedPhotoLinks=urls;
+          setSt("照片已上传，请在打开的 GitHub 页面点“Submit new issue”",true);
+          skgh.classList.remove("show");
+          try{window.open(issueUrl(t,uploadedPhotoLinks),"_blank");}catch(e){}
+        }).catch(function(err){
+          setSt("本机服务和 GitHub 照片上传都不可用："+String(err&&err.message||err).slice(0,60));
+          skgh.classList.remove("show");
+        });
+      }else{
+        inboxQ.push({text:t,ts:new Date().toISOString()});saveQueue();
+        setSt("本机服务连不上：已存下并复制到剪贴板，点右边按钮打开 GitHub 收件箱");
+        skgh.classList.add("show");
+        if(writeBtn)writeBtn.classList.add("has");
+        try{window.open(issueUrl(t),"_blank");}catch(e){}
+      }
     });
   });
   if(sktx)sktx.addEventListener("keydown",function(ev){
@@ -1778,7 +1897,11 @@ setTimeout(function(){
       (ghToken()?"已在这台设备配好 token。刚在别的设备改的勾选，打开或刷新页面时会自动合并。":
        "① 打开 github.com/settings/personal-access-tokens/new ② Repository access 选 Only select repositories，只勾 zhoubao ③ Permissions → Contents 改成 Read and write ④ Generate 后把 token 粘到下面（每台设备粘一次，不会写进网页）");
     if(ssClear)ssClear.hidden=!ghToken()&&!useLocal;
-    if(syncBtn)syncBtn.classList.toggle("has",(!ghToken()&&!useLocal)||!!syncState.err);
+    if(syncBtn){
+      var syncVisible=useLocal||!ghToken()||!!syncState.err;
+      syncBtn.hidden=!syncVisible;
+      syncBtn.classList.toggle("has",!ghToken()||!!syncState.err);
+    }
   }
   function syncNow(){
     if(!syncOn())return Promise.resolve(false);
