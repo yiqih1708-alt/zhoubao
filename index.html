@@ -761,16 +761,18 @@ setTimeout(function(){
   var gateForm=document.getElementById("gform");
   var gatePw=document.getElementById("gpw");
   var gateMsg=document.getElementById("gmsg");
-  /* 5 分钟免验证：人在页面上（可见 / 有操作）就一直续期，离开界面超过 5 分钟才重新要密码 */
-  var IDLE_MS=5*60*1000, ACT_KEY="wode_unlock_v1";
-  function lastActive(){try{return parseInt(localStorage.getItem(ACT_KEY)||"0",10)||0;}catch(e){return 0;}}
-  function touchActivity(force){
-    try{
-      var now=Date.now();
-      if(force||now-lastActive()>10000)localStorage.setItem(ACT_KEY,String(now));
-    }catch(e){}
+  /* 每个浏览器按自然日只验证一次；跨天后刷新或再次显示页面时重新上锁 */
+  var DAY_KEY="wode_unlock_day_v2";
+  function localDayKey(){
+    var d=new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
-  function idleFresh(){return Date.now()-lastActive()<IDLE_MS;}
+  function dailyFresh(){
+    try{return localStorage.getItem(DAY_KEY)===localDayKey();}catch(e){return false;}
+  }
+  function markDailyUnlock(){
+    try{localStorage.setItem(DAY_KEY,localDayKey());}catch(e){}
+  }
   var pendingToast=null;
   function showPendingToast(){
     if(pendingToast&&typeof showToast==="function"){
@@ -779,7 +781,7 @@ setTimeout(function(){
     }
   }
   function gateOpen(animate){
-    touchActivity(true);
+    markDailyUnlock();
     var brand=document.getElementById("brand");
     if(!gateEl){document.body.classList.remove("locked");showPendingToast();return;}
     if(!animate||!brand||!gateTitle){
@@ -909,7 +911,7 @@ setTimeout(function(){
     hideAsk();
   });
   if(pkBtn)pkBtn.addEventListener("click",function(){pkUnlock(false);});
-  /* 离开界面超过 5 分钟，回来后重新上锁 */
+  /* 跨到新的一天后重新上锁 */
   function gateRelock(){
     if(!gateEl||document.body.classList.contains("locked"))return;
     document.body.classList.add("locked");
@@ -921,21 +923,16 @@ setTimeout(function(){
     closeSheet();closeSync();hideAsk();
     if(pkBtn&&pkAvailable()&&pkGet()){pkBtn.hidden=false;pkBtn.textContent="用"+pkName()+"进入";}
   }
-  window.addEventListener("pointerdown",function(){touchActivity();},{passive:true});
-  window.addEventListener("keydown",function(){touchActivity();},{passive:true});
-  window.addEventListener("wheel",function(){touchActivity();},{passive:true});
-  window.addEventListener("touchstart",function(){touchActivity();},{passive:true});
   document.addEventListener("visibilitychange",function(){
     if(document.hidden||document.body.classList.contains("locked"))return;
-    if(idleFresh())touchActivity(true);
-    else gateRelock();
+    if(!dailyFresh())gateRelock();
   });
   setInterval(function(){
-    if(!document.hidden&&!document.body.classList.contains("locked"))touchActivity(true);
+    if(!document.hidden&&!document.body.classList.contains("locked")&&!dailyFresh())gateRelock();
   },30000);
   try{
     if(gateForm)gateForm.addEventListener("submit",function(ev){ev.preventDefault();gateTry();});
-    if(!gateEl||idleFresh()){gateOpen(false);}
+    if(!gateEl||dailyFresh()){gateOpen(false);}
     else{
       if(gatePw)gatePw.focus();
       /* 每次进来都要验证：登记过指纹/面容的设备多一个按钮，没登记的就只能输密码 */
