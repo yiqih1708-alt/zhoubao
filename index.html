@@ -641,6 +641,12 @@ html[data-theme="ink"]{
 html[data-theme="ink"] .lists{background:#090909}
 html[data-theme="ink"] .segpill{background:#f5f5f5}
 html[data-theme="ink"] .segbtn.on{color:#080808}
+html[data-theme] .chip,
+html[data-theme] .acard,
+html[data-theme] .toast .tag,
+html[data-theme] .lg i{filter:grayscale(1)}
+html[data-theme] .day.holiday{background:color-mix(in srgb,var(--label) 7%,var(--cell))}
+html[data-theme] .gate{border-left-color:var(--label);border-right-color:var(--headtext)}
 .tri.theme{display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
 .tri.theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
 .tri.theme .half{fill:currentColor;stroke:none}
@@ -658,6 +664,25 @@ html.theme-liquid::view-transition-new(root){
 }
 @media (prefers-reduced-motion:reduce){
   html.theme-liquid::view-transition-new(root){animation:none}
+}
+@media(max-width:700px){
+  .pager{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:6px 7px;
+    width:calc(100% - 20px);
+    padding:7px 8px;
+  }
+  .pager .tri{width:auto;min-width:0}
+  #prev{grid-column:1;grid-row:1}
+  .weeklabel{grid-column:2/4;grid-row:1;width:auto;min-width:0}
+  #next{grid-column:4;grid-row:1}
+  #home{grid-column:1;grid-row:2}
+  #theme{grid-column:2;grid-row:2;justify-self:stretch}
+  #write{grid-column:3;grid-row:2;justify-self:stretch}
+  #sync{grid-column:4;grid-row:2;justify-self:stretch}
+  .pager:not(:has(#sync:not([hidden]))) #write{grid-column:3/5}
+  .tri.home,.tri.note{padding:0 6px}
 }
 </style>
 </head>
