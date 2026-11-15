@@ -7,11 +7,12 @@
 <title>重要截止日期</title>
 <script>
 (function(){
+  var theme="paper";
   try{
     var saved=localStorage.getItem("wode_theme_v1");
-    var theme=saved==="ink"?"ink":"paper";
-    document.documentElement.dataset.theme=theme;
+    if(saved==="ink")theme="ink";
   }catch(e){}
+  document.documentElement.dataset.theme=theme;
 })();
 </script>
 <style>
