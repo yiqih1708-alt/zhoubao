@@ -7,11 +7,8 @@
 <title>重要截止日期</title>
 <script>
 (function(){
-  var theme="paper";
-  try{
-    var saved=localStorage.getItem("wode_theme_v1");
-    if(saved==="ink")theme="ink";
-  }catch(e){}
+  var hour=new Date().getHours();
+  var theme=(hour>=17||hour<7)?"night":"day";
   document.documentElement.dataset.theme=theme;
 })();
 </script>
@@ -270,8 +267,8 @@ body.unlocking #brand{visibility:hidden}
  padding:11px 12px;border:.5px solid var(--sep);border-radius:12px;background:var(--card);
  color:var(--label);outline:none;box-shadow:var(--shadow)}
 .gpw:focus{border-color:var(--blue)}
-.gok{width:236px;margin-top:1px;padding:10px 14px;border:1px solid var(--headtext);
- border-radius:12px;background:var(--headtext);color:var(--header);font-weight:700;
+.gok{width:236px;margin-top:1px;padding:10px 14px;border:1px solid var(--blue);
+ border-radius:12px;background:var(--blue);color:var(--on-blue);font-weight:700;
  box-shadow:none}
 .gok:active{transform:scale(.985)}
 .gmsg{margin:0;height:14px;font-size:11.5px;color:var(--label3)}
@@ -625,36 +622,27 @@ aside .ttl{
   .gate{border-left-width:7px;border-right-width:7px}
 }
 
-/* Monochrome themes: paper and ink */
-html[data-theme="paper"]{
+/* Colorful day / night themes, switched automatically at 17:00. */
+html[data-theme="day"]{
   color-scheme:light;
-  --bg:#f2f2f2;--bg2:#ffffff;--card:#ffffff;--cell:#ffffff;--cell2:#e9e9e9;
-  --label:#000000;--label2:#4a4a4a;--label3:#767676;--sep:#c8c8c8;--blue:#000000;
-  --shadow:0 1px 0 rgba(0,0,0,.05),0 12px 28px rgba(0,0,0,.08);
-  --gridline:rgba(0,0,0,.055);--header:#000000;--header2:#171717;
-  --headerline:#333333;--headtext:#ffffff;--headmuted:#bdbdbd;--lime:#ffffff;
+  --bg:#eef2f4;--bg2:#f8fafb;--card:#fbfcfd;--cell:#fbfcfd;--cell2:#f1f4f6;
+  --label:#10161c;--label2:#4d5963;--label3:#7d8992;--sep:#ccd4da;--blue:#1f5eff;
+  --on-blue:#ffffff;--shadow:0 1px 0 rgba(16,22,28,.04),0 12px 28px rgba(16,22,28,.07);
+  --gridline:rgba(16,22,28,.055);--header:#0b1117;--header2:#141d25;
+  --headerline:#293641;--headtext:#f6f8fa;--headmuted:#aab5bf;--lime:#c8ed45;
 }
-html[data-theme="ink"]{
+html[data-theme="night"]{
   color-scheme:dark;
-  --bg:#000000;--bg2:#101010;--card:#0d0d0d;--cell:#0b0b0b;--cell2:#050505;
-  --label:#ffffff;--label2:#c8c8c8;--label3:#838383;--sep:#2e2e2e;--blue:#ffffff;
-  --shadow:0 1px 0 rgba(255,255,255,.03),0 16px 34px rgba(0,0,0,.35);
-  --gridline:rgba(255,255,255,.045);--header:#000000;--header2:#111111;
-  --headerline:#2e2e2e;--headtext:#ffffff;--headmuted:#a8a8a8;--lime:#ffffff;
+  --bg:#090e13;--bg2:#111920;--card:#111820;--cell:#10171e;--cell2:#0c1218;
+  --label:#f3f6f8;--label2:#bcc5cd;--label3:#7f8a94;--sep:#29343e;--blue:#79a0ff;
+  --on-blue:#06101f;--shadow:0 1px 0 rgba(0,0,0,.25),0 16px 34px rgba(0,0,0,.28);
+  --gridline:rgba(255,255,255,.045);--header:#05090d;--header2:#101820;
+  --headerline:#28343e;--headtext:#f6f8fa;--headmuted:#a9b3bd;--lime:#c8ed45;
 }
-html[data-theme="ink"] .lists{background:#090909}
-html[data-theme="ink"] .segpill{background:#f5f5f5}
-html[data-theme="ink"] .segbtn.on{color:#080808}
-html[data-theme] .chip,
-html[data-theme] .acard,
-html[data-theme] .toast .tag,
-html[data-theme] .lg i{filter:grayscale(1)}
-html[data-theme="paper"] .chip .ct{color:#0b0b0b!important}
-html[data-theme="ink"] .chip .ct{color:#f5f5f5!important}
-html[data-theme="ink"] .chip.past .ct{color:#c4c4c4!important}
-html[data-theme] .acard b{color:var(--headtext)!important}
-html[data-theme] .day.holiday{background:color-mix(in srgb,var(--label) 7%,var(--cell))}
-html[data-theme] .gate{border-left-color:var(--label);border-right-color:var(--headtext)}
+html[data-theme="day"] .lists{background:#0c141b}
+html[data-theme="night"] .lists{background:#0a1117}
+html[data-theme="night"] .segpill{background:#f5f5f5}
+html[data-theme="night"] .segbtn.on{color:#080808}
 .tri.theme{display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
 .tri.theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
 .tri.theme .half{fill:currentColor;stroke:none}
@@ -673,7 +661,7 @@ html.theme-liquid::view-transition-new(root){
   100%{clip-path:circle(170vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
 }
 .theme-ripple{position:fixed;left:var(--theme-x,50vw);top:var(--theme-y,50vh);z-index:95;
-  width:12px;height:12px;border:1px solid var(--label);border-radius:50%;
+  width:12px;height:12px;border:1px solid var(--blue);border-radius:50%;
   pointer-events:none;opacity:0;transform:translate(-50%,-50%);
   animation:themeRipple 1.9s cubic-bezier(.12,.74,.16,1) forwards}
 @keyframes themeRipple{
@@ -787,7 +775,7 @@ setTimeout(function(){
   <button id="prev" class="tri" aria-label="上一周">◀</button>
   <button id="home" class="tri home" type="button" aria-label="回到本周">本周</button>
   <span class="weeklabel" id="weeklabel"></span>
-  <button id="theme" class="tri theme" type="button" aria-label="切换黑白主题">
+  <button id="theme" class="tri theme" type="button" aria-label="切换日间 / 夜间主题">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="8.3"/>
       <path class="half" d="M12 3.7a8.3 8.3 0 0 1 0 16.6Z"/>
@@ -823,24 +811,25 @@ setTimeout(function(){
 </div>
 <script>
 (function(){
-  /* ---- 黑白主题：从按钮圆心向外像液体一样铺开 ---- */
-  var THEME_KEY="wode_theme_v1";
+  /* ---- 彩色日间 / 夜间主题：17:00 后自动入夜，切换时缓慢铺开 ---- */
   var root=document.documentElement;
   var themeBtn=document.getElementById("theme");
   var reduceMotion=window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-  function paintTheme(theme,save){
+  function autoTheme(){
+    var hour=new Date().getHours();
+    return (hour>=17||hour<7)?"night":"day";
+  }
+  function paintTheme(theme){
     root.dataset.theme=theme;
-    root.style.colorScheme=theme==="ink"?"dark":"light";
-    if(save){
-      try{localStorage.setItem(THEME_KEY,theme);}catch(e){}
-    }
+    root.style.colorScheme=theme==="night"?"dark":"light";
     if(themeBtn){
-      var next=theme==="ink"?"白色":"黑色";
+      var next=theme==="night"?"日间":"夜间";
       themeBtn.setAttribute("aria-label","切换到"+next+"主题");
-      themeBtn.title="切换到"+next+"主题";
+      themeBtn.title="切换到"+next+"主题（17:00 后自动进入夜间）";
     }
   }
-  paintTheme(root.dataset.theme==="ink"?"ink":"paper",false);
+  var lastAutoTheme=autoTheme();
+  paintTheme(lastAutoTheme);
   function playThemeRipple(){
     if(reduceMotion)return;
     var ripple=document.createElement("span");
@@ -849,33 +838,40 @@ setTimeout(function(){
     document.body.appendChild(ripple);
     setTimeout(function(){if(ripple.parentNode)ripple.parentNode.removeChild(ripple);},1950);
   }
-  function switchTheme(){
-    var from=root.dataset.theme==="ink"?"ink":"paper";
-    var to=from==="ink"?"paper":"ink";
+  function switchTheme(forced){
+    var from=root.dataset.theme==="night"?"night":"day";
+    var to=(forced==="day"||forced==="night")?forced:(from==="night"?"day":"night");
     if(!themeBtn){
-      paintTheme(to,true);
+      paintTheme(to);
       return;
     }
     var r=themeBtn.getBoundingClientRect();
     root.style.setProperty("--theme-x",Math.round(r.left+r.width/2)+"px");
     root.style.setProperty("--theme-y",Math.round(r.top+r.height/2)+"px");
     if(!document.startViewTransition||reduceMotion){
-      paintTheme(to,true);
+      paintTheme(to);
       return;
     }
     root.classList.add("theme-liquid");
     var transition=null;
     try{
-      transition=document.startViewTransition(function(){paintTheme(to,true);});
+      transition=document.startViewTransition(function(){paintTheme(to);});
       playThemeRipple();
     }catch(e){
       root.classList.remove("theme-liquid");
-      paintTheme(to,true);
+      paintTheme(to);
       return;
     }
     transition.finished.finally(function(){root.classList.remove("theme-liquid");});
   }
   if(themeBtn)themeBtn.addEventListener("click",switchTheme);
+  setInterval(function(){
+    var next=autoTheme();
+    if(next!==lastAutoTheme){
+      lastAutoTheme=next;
+      switchTheme(next);
+    }
+  },60000);
 
   /* ---- 进门密码：只显示「周报」两个字和密码框；输对了周报字上移、界面展开 ---- */
   var GATE_SALT="zhoubao-lock-7f3a", GATE_ITER=2000;
