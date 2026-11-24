@@ -1185,7 +1185,9 @@ setTimeout(function(){
     var items=[].slice.call(dayEl.querySelectorAll("[data-order]"));
     if(items.length<2&&!animate)return;
     if(animate){items.forEach(function(el){el.__y0=el.getBoundingClientRect().top;});}
+    var chronological=mobileLayout.matches&&dayEl.parentElement.classList.contains("day");
     function bucket(el){
+      if(chronological)return el.hasAttribute("data-checkable")&&el.classList.contains("done")?9:0;
       if(!el.hasAttribute("data-checkable"))return 0;   /* 课程按时间留在原位 */
       if(el.classList.contains("done"))return 9;        /* 勾完的排最后 */
       if(el.classList.contains("isnew"))return 0;       /* 新消息临时置顶 */
@@ -1545,6 +1547,7 @@ setTimeout(function(){
   window.addEventListener("resize",setupSnap);
   mobileLayout.addEventListener("change",function(){
     if(!mobileLayout.matches&&showingAnnouncements)showMobileView(false);
+    document.querySelectorAll(".day .items").forEach(function(box){layout(box,false);});
     setupSnap();
     syncFromScroll();
   });
