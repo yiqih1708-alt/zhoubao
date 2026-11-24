@@ -676,38 +676,23 @@ header,.pager,.pagerdot,.month-view{
 .pager .tri:active{background:var(--lime)}
 html[data-theme="night"] .chip:not(.past) .ct{color:color-mix(in srgb,var(--acc) 50%,var(--label))}
 html[data-theme="night"] .chip.done{opacity:.64}
-html.theme-fade,html.theme-fade :is(body,header,aside,.lists,.week,.day,.chip,.pager,.pagerdot,.tri,.gate,.gpw,.mobile-nav button,.ct,.cm,.seg,.segbtn){
-  transition:background-color .38s ease,color .38s ease,border-color .38s ease,box-shadow .38s ease}
+html.theme-fade,html.theme-fade :is(body,header,aside,.lists,.week,.day,.chip,.pager,.pagerdot,.tri,.gate,.gpw,.mobile-nav button,.ct,.cm,.seg,.segbtn,.month-view,.sheet .sk){
+  transition:background-color .32s ease,color .32s ease,border-color .32s ease,box-shadow .32s ease}
 .tri.theme{display:inline-flex;align-items:center;justify-content:center;width:38px;padding:0}
-.tri.theme svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
-.tri.theme .half{fill:currentColor;stroke:none}
-::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
-html.theme-liquid::view-transition-old(root){z-index:1}
-html.theme-liquid::view-transition-new(root){
-  z-index:2;
-  clip-path:circle(0 at var(--theme-x,50vw) var(--theme-y,50vh));
-  animation:themeLiquid 1.9s cubic-bezier(.12,.74,.16,1) forwards;
-}
-@keyframes themeLiquid{
-  0%{clip-path:circle(0 at var(--theme-x,50vw) var(--theme-y,50vh))}
-  28%{clip-path:circle(28vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
-  64%{clip-path:circle(82vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
-  88%{clip-path:circle(135vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
-  100%{clip-path:circle(170vmax at var(--theme-x,50vw) var(--theme-y,50vh))}
-}
-.theme-ripple{position:fixed;left:var(--theme-x,50vw);top:var(--theme-y,50vh);z-index:95;
-  width:12px;height:12px;border:1px solid var(--blue);border-radius:50%;
-  pointer-events:none;opacity:0;transform:translate(-50%,-50%);
-  animation:themeRipple 1.9s cubic-bezier(.12,.74,.16,1) forwards}
-@keyframes themeRipple{
-  0%{width:12px;height:12px;opacity:.25}
-  22%{opacity:.16}
-  100%{width:170vmax;height:170vmax;opacity:0}
-}
-@media (prefers-reduced-motion:reduce){
-  html.theme-liquid::view-transition-new(root){animation:none}
-  .theme-ripple{display:none}
-}
+.tri.theme svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.theme-sun,.theme-moon{transform-origin:center;opacity:0;transform:scale(.82)}
+html[data-theme="day"] .theme-sun,html[data-theme="night"] .theme-moon{opacity:1;transform:none}
+.theme-fade :is(.theme-sun,.theme-moon){transition:opacity .2s ease,transform .24s ease-out}
+html.theme-crossfade #theme svg{view-transition-name:theme-symbol}
+html.theme-crossfade::view-transition{pointer-events:none}
+html.theme-crossfade::view-transition-old(root){animation:appearance-out .32s ease both}
+html.theme-crossfade::view-transition-new(root){animation:appearance-in .32s ease both}
+html.theme-crossfade::view-transition-old(theme-symbol){animation:symbol-out .2s ease both}
+html.theme-crossfade::view-transition-new(theme-symbol){animation:symbol-in .24s ease-out both}
+@keyframes appearance-out{to{opacity:0}}
+@keyframes appearance-in{from{opacity:0}}
+@keyframes symbol-out{to{opacity:0;transform:scale(.82)}}
+@keyframes symbol-in{from{opacity:0;transform:scale(.82)}}
 .day-open{display:block;padding:0;background:transparent;color:var(--label);box-shadow:none;text-align:left}
 .day-open .dnum{display:inline-block}
 .month-view{width:min(540px,calc(100% - 32px));max-height:calc(100% - 40px);padding:16px;
@@ -910,8 +895,10 @@ setTimeout(function(){
   <span class="weeklabel" id="weeklabel"></span>
   <button id="theme" class="tri theme" type="button" aria-label="切换日间 / 夜间主题">
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.3"/>
-      <path class="half" d="M12 3.7a8.3 8.3 0 0 1 0 16.6Z"/>
+      <g class="theme-sun"><circle cx="12" cy="12" r="4.25"/>
+        <path d="M12 2.5v2m0 15v2M2.5 12h2m15 0h2M5.3 5.3l1.4 1.4m10.6 10.6 1.4 1.4m0-13.4-1.4 1.4M6.7 17.3l-1.4 1.4"/>
+      </g>
+      <path class="theme-moon" d="M20.6 14.4A8.65 8.65 0 0 1 9.6 3.4a8.65 8.65 0 1 0 11 11Z"/>
     </svg>
   </button>
   <button id="write" class="tri note" type="button" aria-label="写一句话，让 Codex 放进日历">写</button>
@@ -953,7 +940,7 @@ setTimeout(function(){
 </div>
 <script>
 (function(){
-  /* ---- 彩色日间 / 夜间主题：17:00 后自动入夜，切换时缓慢铺开 ---- */
+  /* ---- 日间 / 夜间主题：整页同步淡变 ---- */
   var root=document.documentElement;
   var themeBtn=document.getElementById("theme");
   var themeColor=document.querySelector('meta[name="theme-color"]');
@@ -973,51 +960,40 @@ setTimeout(function(){
       themeBtn.title="切换到"+next+"主题（17:00 后自动进入夜间）";
     }
   }
-  var lastAutoTheme=autoTheme();
+  var lastAutoTheme=autoTheme(),requestedTheme=lastAutoTheme;
   paintTheme(lastAutoTheme);
-  function playThemeRipple(){
-    if(reducedMotion.matches)return;
-    var ripple=document.createElement("span");
-    ripple.className="theme-ripple";
-    ripple.setAttribute("aria-hidden","true");
-    document.body.appendChild(ripple);
-    setTimeout(function(){if(ripple.parentNode)ripple.parentNode.removeChild(ripple);},1950);
-  }
   function switchTheme(forced){
-    var from=root.dataset.theme==="night"?"night":"day";
-    var to=(forced==="day"||forced==="night")?forced:(from==="night"?"day":"night");
-    if(to===from)return;
+    var to=(forced==="day"||forced==="night")?forced:(requestedTheme==="night"?"day":"night");
+    if(to===requestedTheme)return;
+    requestedTheme=to;
+    if(themeTransition)themeTransition.skipTransition();
     if(!themeBtn||reducedMotion.matches){
       paintTheme(to);
       return;
     }
-    var r=themeBtn.getBoundingClientRect();
-    root.style.setProperty("--theme-x",Math.round(r.width?r.left+r.width/2:window.innerWidth/2)+"px");
-    root.style.setProperty("--theme-y",Math.round(r.height?r.top+r.height/2:window.innerHeight/2)+"px");
     if(!document.startViewTransition){
       clearTimeout(themeFadeTimer);
       root.classList.add("theme-fade");
       void root.offsetWidth;
       paintTheme(to);
-      themeFadeTimer=setTimeout(function(){root.classList.remove("theme-fade");},420);
+      themeFadeTimer=setTimeout(function(){root.classList.remove("theme-fade");},360);
       return;
     }
-    if(themeTransition)themeTransition.skipTransition();
-    root.classList.add("theme-liquid");
+    root.classList.add("theme-crossfade");
     var transition=null;
     try{
-      transition=document.startViewTransition(function(){paintTheme(to);});
-      playThemeRipple();
+      transition=document.startViewTransition(function(){paintTheme(requestedTheme);});
     }catch(e){
-      root.classList.remove("theme-liquid");
+      root.classList.remove("theme-crossfade");
       paintTheme(to);
       return;
     }
     themeTransition=transition;
+    transition.ready.catch(function(){}); /* 连点时前一次动画可能在开始前被跳过 */
     function finishTransition(){
       if(themeTransition!==transition)return;
       themeTransition=null;
-      root.classList.remove("theme-liquid");
+      root.classList.remove("theme-crossfade");
     }
     transition.finished.then(finishTransition,finishTransition);
   }
