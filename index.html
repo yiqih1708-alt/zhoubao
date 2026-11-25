@@ -632,8 +632,9 @@ html[data-theme="day"]{
   --on-blue:#ffffff;--shadow:0 1px 0 rgba(16,22,28,.04),0 12px 28px rgba(16,22,28,.07);
   --gridline:rgba(27,64,108,.035);--header:#f8fbff;--header2:#e9eff7;--panel:#f3f7fc;
   --headerline:#cbd8e7;--headtext:#152a43;--headmuted:#4f6279;--lime:#dbeaff;--on-highlight:#153e78;
-  --glass:rgba(248,252,255,.78);--glass-line:rgba(118,147,182,.26);--glass-sheen:rgba(255,255,255,.95);
-  --glass-shadow:0 8px 26px rgba(41,67,103,.12);--light-pool:#d7e7fc;
+  --glass:rgba(246,251,255,.59);--glass-dock:rgba(245,250,255,.46);--glass-sheet:rgba(248,252,255,.76);
+  --glass-line:rgba(108,143,184,.35);--glass-sheen:rgba(255,255,255,.98);--glass-rim:rgba(107,152,209,.28);
+  --glass-shadow:0 9px 27px rgba(41,67,103,.16);--light-pool:#c8dffb;--light-floor:#ceddf7;
 }
 html[data-theme="night"]{
   color-scheme:dark;
@@ -642,11 +643,12 @@ html[data-theme="night"]{
   --on-blue:#06101f;--shadow:0 1px 0 rgba(0,0,0,.25),0 16px 34px rgba(0,0,0,.28);
   --gridline:rgba(255,255,255,.028);--header:#101820;--header2:#1a2531;--panel:#0c131c;
   --headerline:#314051;--headtext:#f6f8fa;--headmuted:#a9b3bd;--lime:#293f67;--on-highlight:#e6efff;
-  --glass:rgba(22,32,47,.8);--glass-line:rgba(164,183,222,.24);--glass-sheen:rgba(207,224,255,.19);
-  --glass-shadow:0 10px 28px rgba(2,7,16,.38);--light-pool:#1a2d49;
+  --glass:rgba(17,27,43,.63);--glass-dock:rgba(20,34,55,.49);--glass-sheet:rgba(15,27,45,.78);
+  --glass-line:rgba(164,192,242,.33);--glass-sheen:rgba(223,236,255,.42);--glass-rim:rgba(101,148,227,.29);
+  --glass-shadow:0 10px 28px rgba(2,7,16,.43);--light-pool:#203b61;--light-floor:#192c50;
 }
 body{min-height:100vh;min-height:100svh;
-  background-image:radial-gradient(ellipse 85% 52% at 85% 2%,var(--light-pool),transparent);
+  background-image:radial-gradient(ellipse 68vw 43vh at 84% 0%,var(--light-pool),transparent);
   background-size:auto;background-repeat:no-repeat}
 .lg,.segbtn,.pinitem,.mailnote,.list .mailnote,.gmsg,.gpk{color:var(--headmuted)}
 .lists{background:var(--panel)}
@@ -668,9 +670,16 @@ body{min-height:100vh;min-height:100svh;
   linear-gradient(90deg,var(--gridline) 1px,transparent 1px)}
 header,.pager,.pagerdot,.month-view{
   background:var(--header);
-  background:linear-gradient(165deg,color-mix(in srgb,var(--glass-sheen) 26%,transparent),transparent 58%),var(--glass);
-  -webkit-backdrop-filter:blur(22px) saturate(155%);backdrop-filter:blur(22px) saturate(155%);
   border-color:var(--glass-line);box-shadow:inset 0 1px 0 var(--glass-sheen),var(--glass-shadow)}
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  header,.pager,.pagerdot,.month-view{
+    background:linear-gradient(169deg,var(--glass-sheen),transparent 24%,transparent 72%,var(--glass-rim)),var(--glass-fill,var(--glass));
+    -webkit-backdrop-filter:blur(17px) saturate(170%);backdrop-filter:blur(17px) saturate(170%);
+    box-shadow:inset 0 1px 1px var(--glass-sheen),inset 0 -1px 1px var(--glass-rim),var(--glass-shadow)
+  }
+}
+.pager,.pagerdot{--glass-fill:var(--glass-dock)}
+.month-view{--glass-fill:var(--glass-sheet)}
 header{transition:box-shadow .2s ease}
 header::after{content:"";position:absolute;inset:100% 0 auto;height:16px;pointer-events:none;opacity:0;
   background:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 88%,transparent),transparent);
@@ -737,7 +746,9 @@ body:has(.month-view[open]) :is(.pager,.pagerdot,.mobile-nav){visibility:hidden}
     --right-gutter:calc(var(--mobile-gutter) + var(--right-safe));
     overflow-x:hidden;overflow-x:clip;-webkit-text-size-adjust:100%;
   }
-  body{padding:0 0 calc(88px + var(--bottom-safe))}
+  body{padding:0 0 calc(88px + var(--bottom-safe));
+    background-image:radial-gradient(ellipse 78vw 37svh at 83% 0%,var(--light-pool),transparent),
+      radial-gradient(ellipse 84vw 27svh at 22% 95svh,var(--light-floor),transparent)}
   .cols{padding-inline:var(--left-gutter) var(--right-gutter)}
   header{margin:0 0 14px;padding:calc(9px + var(--top-safe)) var(--right-gutter) 9px var(--left-gutter);
     display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px}
