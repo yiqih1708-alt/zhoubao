@@ -26,7 +26,8 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
-html{scroll-snap-type:y proximity;scroll-padding-top:var(--snap-top,150px);background:var(--bg)}
+html{scroll-snap-type:y proximity;scroll-padding-top:var(--snap-top,150px);
+  scroll-padding-bottom:var(--snap-bottom,0px);background:var(--bg)}
 body{background:var(--bg);color:var(--label);
  font:15px/1.47 -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI","Microsoft YaHei",sans-serif;
  -webkit-font-smoothing:antialiased;padding:0 18px 88px}
@@ -806,6 +807,11 @@ body:has(.month-view[open]) :is(.pager,.pagerdot,.mobile-nav){visibility:hidden}
 @media(prefers-reduced-motion:reduce){
   .month-view,.month-view::backdrop,.mobile-nav button{transition:none}
 }
+@media(min-width:721px) and (min-height:501px) and (max-height:800px){
+  header{padding-block:9px;margin-bottom:12px}
+  #brand{font-size:44px;margin-bottom:5px}
+  .masthead .legend{margin-top:6px;padding-top:6px}
+}
 </style>
 </head>
 <body class="locked">
@@ -1392,9 +1398,9 @@ setTimeout(function(){
     for(var i=0;i<weeks.length;i++){if(weeks[i].querySelector(".day.today"))return i;}
     return 0;
   }
-  function goTo(i){
+  function goTo(i,align){
     i=Math.max(0,Math.min(weeks.length-1,i));
-    weeks[i].scrollIntoView({behavior:reducedMotion.matches?"instant":"smooth",block:"start"});
+    weeks[i].scrollIntoView({behavior:reducedMotion.matches?"instant":"smooth",block:align||"start"});
     setActive(i,true);
   }
   function todayIndex(){
@@ -1616,6 +1622,7 @@ setTimeout(function(){
     document.body.classList.toggle("pagercollapsed",on);
     if(pagerEl)pagerEl.classList.toggle("collapsed",on);
     if(save&&store){try{on?store.setItem(PAGER_KEY,"1"):store.removeItem(PAGER_KEY);}catch(e){}}
+    setupSnap();
   }
   try{if(store&&store.getItem(PAGER_KEY)==="1")setPagerCollapsed(true,false);}catch(e){}
   function measurePager(){
@@ -1738,18 +1745,36 @@ setTimeout(function(){
     pagerEl.addEventListener("click",function(ev){if(pmoved){ev.preventDefault();ev.stopPropagation();}},true);
   }
 
-  /* 一次滚轮/方向键 = 平滑滑到上一周或下一周 */
+  /* 一周装不下时，先在这一周内滚动，再翻周。 */
+  function readingBounds(){
+    var dock=document.body.classList.contains("pagercollapsed")?pagerDot:pagerEl;
+    var dockTop=dock&&dock.getBoundingClientRect().top;
+    return {top:headH()+10,bottom:dockTop>0?dockTop-10:window.innerHeight-10};
+  }
+  function weekAtReadingLine(top){
+    var current=0;
+    while(current+1<weeks.length&&weeks[current+1].getBoundingClientRect().top<=top+2)current++;
+    return current;
+  }
   var lock=false;
   function step(dir){
-    if(lock)return;
-    var t=Math.max(0,Math.min(weeks.length-1,idx+dir));
-    if(t===idx)return;
+    if(lock)return true;
+    var bounds=readingBounds();
+    var current=weekAtReadingLine(bounds.top);
+    var rect=weeks[current].getBoundingClientRect();
+    if(rect.bottom<bounds.top)return false;
+    if(rect.height>bounds.bottom-bounds.top+2&&
+      (dir>0?rect.bottom>bounds.bottom+2:rect.top<bounds.top-2))return false;
+    var target=weeks[current+dir];
+    if(!target)return false;
+    var align=dir<0&&target.offsetHeight>bounds.bottom-bounds.top+2?"end":"start";
     lock=true;
-    goTo(t);
+    goTo(current+dir,align);
     setTimeout(function(){lock=false;},620);
+    return true;
   }
   window.addEventListener("wheel",function(e){
-    if(mobileLayout.matches||monthView.open)return;
+    if(mobileLayout.matches||monthView.open||document.querySelector(".sheet.show"))return;
     if(e.ctrlKey||e.metaKey)return;              /* 页面缩放不拦 */
     if(Math.abs(e.deltaY)<2)return;
     /* 鼠标停在公告栏里：先让公告栏自己滚，滚到尽头才翻周 */
@@ -1759,25 +1784,20 @@ setTimeout(function(){
       var atBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-2;
       if((e.deltaY>0&&!atBottom)||(e.deltaY<0&&!atTop))return;
     }
-    e.preventDefault();
-    step(e.deltaY>0?1:-1);
+    if(step(e.deltaY>0?1:-1))e.preventDefault();
   },{passive:false});
   window.addEventListener("keydown",function(e){
-    if(mobileLayout.matches||monthView.open)return;
-    if(e.key==="ArrowDown"||e.key==="PageDown"){e.preventDefault();step(1);}
-    if(e.key==="ArrowUp"||e.key==="PageUp"){e.preventDefault();step(-1);}
+    if(mobileLayout.matches||monthView.open||document.querySelector(".sheet.show")||e.defaultPrevented)return;
+    if(e.target instanceof Element&&e.target.closest("input,textarea,select,[contenteditable]"))return;
+    if((e.key==="ArrowDown"||e.key==="PageDown")&&step(1))e.preventDefault();
+    if((e.key==="ArrowUp"||e.key==="PageUp")&&step(-1))e.preventDefault();
   });
 
   var tick=false;
   function syncFromScroll(){
     tick=false;
     if(mobileLayout.matches||monthView.open)return;
-    var line=headH()+8,best=0,bestD=1e9;
-    weeks.forEach(function(w,k){
-      var d=Math.abs(w.getBoundingClientRect().top-line);
-      if(d<bestD){bestD=d;best=k;}
-    });
-    setActive(best,true);
+    setActive(weekAtReadingLine(headH()+10),true);
   }
   window.addEventListener("scroll",function(){
     if(!tick){tick=true;requestAnimationFrame(syncFromScroll);}
@@ -1795,9 +1815,10 @@ setTimeout(function(){
   }
   /* 顶栏高度 → 吸附偏移；某周比屏幕高时退化成轻柔吸附 */
   function setupSnap(){
-    var h=headH();
-    document.documentElement.style.setProperty("--snap-top",(h+10)+"px");
-    var room=window.innerHeight-h-24;
+    var bounds=readingBounds();
+    document.documentElement.style.setProperty("--snap-top",bounds.top+"px");
+    document.documentElement.style.setProperty("--snap-bottom",(window.innerHeight-bounds.bottom)+"px");
+    var room=bounds.bottom-bounds.top;
     var tooTall=weeks.some(function(w){return w.getBoundingClientRect().height>room;});
     document.documentElement.style.scrollSnapType=mobileLayout.matches?"none":tooTall?"y proximity":"y mandatory";
     sizeSide();
